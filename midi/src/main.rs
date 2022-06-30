@@ -6,11 +6,13 @@ use std::error::Error;
 use midir::{MidiInput, Ignore};
 use std::thread;
 use std::time::Duration;
+use std::fs::File;
 
 // use std::sync::mutex;
 
 fn main() {
-    
+    let mut ofile = File::create("info.txt").expect("unable to create file"); 
+    ofile.write_all("".as_bytes()).expect("unable to write");
     
     // let mut active_notes:Vec<i32> = Vec::new();
     {
@@ -77,6 +79,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 if message[1] != 1{
                     if message[1] != 64{    
                         handle_note(message[1].into(),&mut active_notes);
+                        write_notes_to_file(&active_notes);
                     }
                 }
                 else {
@@ -132,4 +135,18 @@ fn display_board(act_notes:&Vec<i32>){
         }
     }
     println!();
+    // write_notes_to_file(act_notes);
+}
+fn write_notes_to_file(act_notes:&Vec<i32>){
+    let mut out:String=String::new();
+        
+    for note in act_notes{
+        // out_notes.push(note.to_string());
+        out.push_str(&note.to_string());
+        out.push_str("\n");
+    }
+
+    let mut ofile = File::create("info.txt").expect("unable to create file"); 
+    ofile.write_all(out.as_bytes()).expect("unable to write");
+
 }

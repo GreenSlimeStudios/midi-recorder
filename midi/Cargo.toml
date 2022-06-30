@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 midir = "0.8.0"
-#macroquad = "0.3.16"
+# nannou = "0.18.1"
+#macroquad = "0.3.20"
