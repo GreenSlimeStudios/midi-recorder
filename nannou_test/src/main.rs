@@ -19,13 +19,19 @@ fn view(app: &App, _model: &Model, frame: Frame) {
     draw.background().color(BLACK);
     let t = app.time;
     
+    // for note in &_model.keys{
+    //     draw.rect()
+    //     .x_y((note.note as f32 * 10.0) - (win.w() / 2.0) - 200.0, note.y)
+    //     .w(8.0).h(7.0)
+    //     .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+    // }
     for note in &_model.keys{
         draw.rect()
-        .x_y((note.note as f32 * 10.0) - (win.w() / 2.0) - 200.0, note.y)
-        .w(8.0).h(7.0)
+        .x_y((note.note as f32 * win.w()/(108.0 - 21.0)) - (win.w()/2.0) - (21.0 * win.w()/(108.0 - 21.0)), note.y)
+        .w((win.w()/(108.0 - 21.0))-2.0).h(7.0)
         .hsv(note.note as f32 / 70.0, 1.0, 1.0);
     }
-    
+
     draw.to_frame(app, &frame).unwrap();
 }
 // #[derive(PartialEq)]
