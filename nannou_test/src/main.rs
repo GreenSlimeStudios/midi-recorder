@@ -1,15 +1,14 @@
 use nannou::prelude::*;
 use std::fs;
 
-const NOTE_SPEED: f32 = 5.0;
-const STARTING_NOTE: i32 = 21;
-const ENDING_NOTE: i32 = 108;
-const NOTE_MARGIN: f32 = 2.0;
-const WIDTH_ADJUST: bool = false;
-const NOTE_WIDTH: f32 = 10.0; //applies if WIDTH_ADJUST is set to false
+const NOTE_SPEED: f32 = 5.0;      // speed of floating notes
+const STARTING_NOTE: i32 = 21;    // the note value of the first note on your midi device
+const ENDING_NOTE: i32 = 108;     // the note value of the last note on your midi device
+const NOTE_MARGIN: f32 = 2.0;     // margin between notes
+const WIDTH_ADJUST: bool = true;  // if false the notes are going to have a fixed width if true it will adjust to the window width
+const NOTE_WIDTH: f32 = 10.0;     // applies if WIDTH_ADJUST is set to false
 
 fn main() {
-    // let info = GlobalInfo{frame:10,notes:Vec::new};
     nannou::app(model).simple_window(view).update(update).run();
 }
 
@@ -39,7 +38,6 @@ fn view(app: &App, _model: &Model, frame: Frame) {
 
     draw.to_frame(app, &frame).unwrap();
 }
-// #[derive(PartialEq)]
 struct Note {
     note: i8,
     // x:f32,
@@ -75,9 +73,7 @@ fn model(app: &App) -> Model {
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
-    //    _model.
     model.frame += 1;
-    //if model.frame % 2 == 0
 
     let win = app.window_rect();
 
@@ -85,7 +81,6 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         fs::read_to_string("../midi/info.txt").expect("Something went wrong reading the file");
 
     let mut notes_string: Vec<&str> = contents.split("\n").collect();
-    // let mut info = Info::new();
 
     notes_string.pop();
 
@@ -95,11 +90,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         model
             .keys
             .push(Note::new(n.parse().unwrap(), -win.h() / 2.0));
-        // println!("gut {}", n);
     }
     let mut deleted = 0;
     for i in 0..model.keys.len() {
-        // note.update();
         if model.keys[i - deleted].y > win.h() {
             if model.keys.len() > 1 {
                 model.keys.remove(0);
