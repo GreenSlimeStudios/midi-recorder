@@ -30,16 +30,34 @@ fn run() -> Result<(), Box<dyn Error>> {
         }
         _ => {
             println!("\nAvailable output ports:");
+            let mut is_midir_found: bool = false;
+            let mut midir_index = 100;
             for (i, p) in out_ports.iter().enumerate() {
                 println!("{}: {}", i, midi_out.port_name(p).unwrap());
+                if midi_out
+                    .port_name(p)
+                    .unwrap()
+                    .starts_with("midir reading input")
+                {
+                    is_midir_found = true;
+                    midir_index = i;
+                }
             }
-            print!("Please select output port: ");
-            stdout().flush()?;
-            let mut input = String::new();
-            stdin().read_line(&mut input)?;
-            out_ports
-                .get(input.trim().parse::<usize>()?)
-                .ok_or("invalid output port selected")?
+            if is_midir_found == true {
+                println!("midir input port found, connecting...");
+                out_ports
+                    .get(midir_index)
+                    .ok_or("invalid output port selected")?
+            } else {
+                println!("midir input port not found, make sure the midi program is running. If you are sure it is please select an output");
+                print!("Please select output port: ");
+                stdout().flush()?;
+                let mut input = String::new();
+                stdin().read_line(&mut input)?;
+                out_ports
+                    .get(input.trim().parse::<usize>()?)
+                    .ok_or("invalid output port selected")?
+            }
         }
     };
 
@@ -64,15 +82,6 @@ fn run() -> Result<(), Box<dyn Error>> {
             play_note(1);
             sleep(Duration::from_millis(50));
         }
-
-        // play_note(66, 4);
-        // play_note(65, 3);
-        // play_note(63, 1);
-        // play_note(61, 6);
-        // play_note(59, 2);
-        // play_note(58, 4);
-        // play_note(56, 4);
-        // play_note(54, 4);
     }
     sleep(Duration::from_millis(150));
     println!("\nClosing connection");
