@@ -1,14 +1,12 @@
 extern crate midir;
 
 use std::error::Error;
-use std::io::{stdin, stdout, Read, Write};
+use std::io::{stdin, stdout, Write};
 
 use midir::{Ignore, MidiInput};
 use std::fs::File;
-use std::thread;
-use std::time::Duration;
 
-// use std::sync::mutex;
+const PEDAL_NOTE:u8 = 64; // change this for your pedal note so the program ignores it
 
 fn main() {
     let mut ofile = File::create("info.txt").expect("unable to create file");
@@ -59,32 +57,16 @@ fn run() -> Result<(), Box<dyn Error>> {
     let in_port_name = midi_in.port_name(in_port)?;
 
     let mut active_notes: Vec<i32> = Vec::new();
-    let mut active_notes2: Vec<i32> = Vec::new();
-    // t
 
-    // thread::spawn(move|| {
-    //     loop {
-    //         thread::sleep(Duration::from_millis(50));
-    //         // println!("");
-
-    //         // println!("{:?}",active_notes);
-    //     }
-    // });
-    // loop{
-    // active_notes = active_notes.clone();
-    // _conn_in needs to be a named parameter, because it needs to be kept alive until the end of the scope
     let _conn_in = midi_in.connect(
         in_port,
         "midir-read-input",
         move |stamp, message, _| {
             if message.len() == 3usize {
                 //println!("{:?}", message);
-                // active_notes2 = active_notes.clone();
                 if message[1] != 1 {
-                    if message[1] != 64 {
-                        handle_note(message[1].into(), &mut active_notes);
-                        write_notes_to_file(&active_notes);
-                    }
+                    handle_note(message[1].into(), &mut active_notes);
+                    write_notes_to_file(&active_notes);
                 } else {
                     display_board(&active_notes);
                     // println!("{:?}",active_notes);
@@ -93,11 +75,6 @@ fn run() -> Result<(), Box<dyn Error>> {
         },
         (),
     )?;
-    // let t = _conn_in.close();
-    // active_notes = active_notes.clone();
-    // println!("{:?}",t.1);
-
-    // }
 
     println!(
         "Connection open, reading input from '{}' (press enter to exit) ...",
@@ -124,17 +101,12 @@ fn handle_note(note: i32, act_notes: &mut Vec<i32>) {
     if had_note == false {
         act_notes.push(note);
     }
-    // println!("{:?}",act_notes);
-    // if act_notes.contains(&note) {
-    //     act_notes.po
-    // }
 }
 
 fn display_board(act_notes: &Vec<i32>) {
     for i in 21..=108 {
-        if act_notes.contains(&(i as i32)) {
+        if act_notes.contains(&(i as i32)) && i != PEDAL_NOTE as i32 {
             print!("X");
-            // print!("   ")
         } else {
             print!(" ");
         }
@@ -146,7 +118,6 @@ fn write_notes_to_file(act_notes: &Vec<i32>) {
     let mut out: String = String::new();
 
     for note in act_notes {
-        // out_notes.push(note.to_string());
         out.push_str(&note.to_string());
         out.push_str("\n");
     }

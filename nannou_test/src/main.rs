@@ -7,6 +7,7 @@ const ENDING_NOTE: i32 = 108;     // the note value of the last note on your mid
 const NOTE_MARGIN: f32 = 2.0;     // margin between notes
 const WIDTH_ADJUST: bool = true;  // if false the notes are going to have a fixed width if true it will adjust to the window width
 const NOTE_WIDTH: f32 = 10.0;     // applies if WIDTH_ADJUST is set to false
+const PEDAL_NOTE:i8 = 64;         // change this for your pedal note so the program ignores it
 
 fn main() {
     nannou::app(model).simple_window(view).update(update).run();
@@ -24,6 +25,9 @@ fn view(app: &App, _model: &Model, frame: Frame) {
     }
 
     for note in &_model.keys {
+        if note.note == PEDAL_NOTE {
+            continue;
+        }
         draw.rect()
             .x_y(
                 (note.note as f32 * note_multiplier)
