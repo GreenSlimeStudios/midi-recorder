@@ -1,12 +1,12 @@
 use nannou::prelude::*;
 use std::fs;
 
-const NOTE_SPEED:f32 = 5.0;
-const STARTING_NOTE:i32 = 21;
-const ENDING_NOTE:i32 = 108;
-const NOTE_MARGIN:f32 = 2.0;
-const WIDTH_ADJUST:bool = false;
-const NOTE_WIDTH:f32 = 10.0; //applies if WIDTH_ADJUST is set to false
+const NOTE_SPEED: f32 = 5.0;
+const STARTING_NOTE: i32 = 21;
+const ENDING_NOTE: i32 = 108;
+const NOTE_MARGIN: f32 = 2.0;
+const WIDTH_ADJUST: bool = false;
+const NOTE_WIDTH: f32 = 10.0; //applies if WIDTH_ADJUST is set to false
 
 fn main() {
     // let info = GlobalInfo{frame:10,notes:Vec::new};
@@ -19,11 +19,11 @@ fn view(app: &App, _model: &Model, frame: Frame) {
     let win = app.window_rect();
     draw.background().color(BLACK);
 
-    let mut note_multiplier:f32 = NOTE_WIDTH;
-    if WIDTH_ADJUST == true{
+    let mut note_multiplier: f32 = NOTE_WIDTH;
+    if WIDTH_ADJUST == true {
         note_multiplier = win.w() / (ENDING_NOTE - STARTING_NOTE) as f32;
     }
-    
+
     for note in &_model.keys {
         draw.rect()
             .x_y(
@@ -78,36 +78,35 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     //    _model.
     model.frame += 1;
     //if model.frame % 2 == 0
-    {
-        let win = app.window_rect();
 
-        let contents =
-            fs::read_to_string("../midi/info.txt").expect("Something went wrong reading the file");
+    let win = app.window_rect();
 
-        let mut notes_string: Vec<&str> = contents.split("\n").collect();
-        // let mut info = Info::new();
+    let contents =
+        fs::read_to_string("../midi/info.txt").expect("Something went wrong reading the file");
 
-        notes_string.pop();
+    let mut notes_string: Vec<&str> = contents.split("\n").collect();
+    // let mut info = Info::new();
 
-        println!("{:?}", notes_string);
+    notes_string.pop();
 
-        for n in notes_string {
-            model
-                .keys
-                .push(Note::new(n.parse().unwrap(), -win.h() / 2.0));
-            // println!("gut {}", n);
-        }
-        let mut deleted = 0;
-        for i in 0..model.keys.len() {
-            // note.update();
-            if model.keys[i - deleted].y > 1000.0 {
-                if model.keys.len() > 1 {
-                    model.keys.remove(0);
-                    deleted += 1;
-                }
-            } else {
-                model.keys[i - deleted].update();
+    println!("{:?}", notes_string);
+
+    for n in notes_string {
+        model
+            .keys
+            .push(Note::new(n.parse().unwrap(), -win.h() / 2.0));
+        // println!("gut {}", n);
+    }
+    let mut deleted = 0;
+    for i in 0..model.keys.len() {
+        // note.update();
+        if model.keys[i - deleted].y > win.h() {
+            if model.keys.len() > 1 {
+                model.keys.remove(0);
+                deleted += 1;
             }
+        } else {
+            model.keys[i - deleted].update();
         }
     }
 }
