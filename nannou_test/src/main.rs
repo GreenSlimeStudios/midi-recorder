@@ -1,6 +1,13 @@
 use nannou::prelude::*;
 use std::fs;
 
+const NOTE_SPEED:f32 = 5.0;
+const STARTING_NOTE:i32 = 21;
+const ENDING_NOTE:i32 = 108;
+const NOTE_MARGIN:f32 = 2.0;
+const WIDTH_ADJUST:bool = false;
+const NOTE_WIDTH:f32 = 10.0; //applies if WIDTH_ADJUST is set to false
+
 fn main() {
     // let info = GlobalInfo{frame:10,notes:Vec::new};
     nannou::app(model).simple_window(view).update(update).run();
@@ -10,26 +17,22 @@ fn view(app: &App, _model: &Model, frame: Frame) {
     let draw = app.draw();
 
     let win = app.window_rect();
-    // Begin drawing
-    // Clear the background to blue.
     draw.background().color(BLACK);
-    let t = app.time;
 
-    // for note in &_model.keys{
-    //     draw.rect()
-    //     .x_y((note.note as f32 * 10.0) - (win.w() / 2.0) - 200.0, note.y)
-    //     .w(8.0).h(7.0)
-    //     .hsv(note.note as f32 / 70.0, 1.0, 1.0);
-    // }
+    let mut note_multiplier:f32 = NOTE_WIDTH;
+    if WIDTH_ADJUST == true{
+        note_multiplier = win.w() / (ENDING_NOTE - STARTING_NOTE) as f32;
+    }
+    
     for note in &_model.keys {
         draw.rect()
             .x_y(
-                (note.note as f32 * win.w() / (108.0 - 21.0))
+                (note.note as f32 * note_multiplier)
                     - (win.w() / 2.0)
-                    - (21.0 * win.w() / (108.0 - 21.0)),
+                    - (STARTING_NOTE as f32 * note_multiplier),
                 note.y,
             )
-            .w((win.w() / (108.0 - 21.0)) - 2.0)
+            .w(note_multiplier - NOTE_MARGIN)
             .h(7.0)
             .hsv(note.note as f32 / 70.0, 1.0, 1.0);
     }
@@ -47,7 +50,7 @@ impl Note {
         Self { note: n, y: y }
     }
     fn update(&mut self) {
-        self.y += 5.0;
+        self.y += NOTE_SPEED;
     }
 }
 
