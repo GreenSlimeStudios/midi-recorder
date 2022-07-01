@@ -37,7 +37,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 if midi_out
                     .port_name(p)
                     .unwrap()
-                    .starts_with("midir reading input")
+                    .contains("midir-read-input")
                 {
                     is_midir_found = true;
                     midir_index = i;

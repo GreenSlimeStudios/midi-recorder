@@ -6,8 +6,6 @@ use std::io::{stdin, stdout, Write};
 use midir::{Ignore, MidiInput};
 use std::fs::File;
 
-const PEDAL_NOTE:u8 = 64; // change this for your pedal note so the program ignores it
-
 fn main() {
     let mut ofile = File::create("info.txt").expect("unable to create file");
     ofile.write_all("".as_bytes()).expect("unable to write");
@@ -65,8 +63,12 @@ fn run() -> Result<(), Box<dyn Error>> {
             if message.len() == 3usize {
                 //println!("{:?}", message);
                 if message[1] != 1 {
-                    handle_note(message[1].into(), &mut active_notes);
-                    write_notes_to_file(&active_notes);
+                    // println!("{:?}",message);
+                    if message[0] == 144 || message[0] == 128{ // this checks if the midi input is a note
+                        handle_note(message[1].into(), &mut active_notes);
+                        write_notes_to_file(&active_notes);
+                    }
+                    
                 } else {
                     display_board(&active_notes);
                     // println!("{:?}",active_notes);
@@ -105,7 +107,7 @@ fn handle_note(note: i32, act_notes: &mut Vec<i32>) {
 
 fn display_board(act_notes: &Vec<i32>) {
     for i in 21..=108 {
-        if act_notes.contains(&(i as i32)) && i != PEDAL_NOTE as i32 {
+        if act_notes.contains(&(i as i32)){
             print!("X");
         } else {
             print!(" ");
