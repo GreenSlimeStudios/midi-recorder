@@ -36,10 +36,10 @@ fn view(app: &App, _model: &Model, frame: Frame) {
                 (note.note as f32 * note_multiplier)
                     - half_width
                     - (STARTING_NOTE as f32 * note_multiplier),
-                note.y,
+                note.y - note.length / 2.0,
             )
             .w(note_multiplier - NOTE_MARGIN)
-            .h(7.0)
+            .h(note.length)
             .hsv(note.note as f32 / 70.0, 1.0, 1.0);
     }
     if USE_PARTICLES == true {
@@ -59,14 +59,16 @@ fn view(app: &App, _model: &Model, frame: Frame) {
 
     draw.to_frame(app, &frame).unwrap();
 }
+#[derive(Clone)]
 struct Note {
     note: i8,
     // x:f32,
     y: f32,
+    length:f32,
 }
 impl Note {
     fn new(n: i8, y: f32) -> Self {
-        Self { note: n, y: y }
+        Self { note: n, y: y , length: NOTE_SPEED}
     }
     fn update(&mut self) {
         self.y += NOTE_SPEED;
@@ -116,6 +118,7 @@ impl Particle {
 struct Model {
     _window: window::Id,
     keys: Vec<Note>,
+    keys_prev: Vec<String>,
     frame: i128,
     particles: Vec<Particle>,
     rng: ThreadRng,
@@ -126,6 +129,7 @@ impl Model {
         Self {
             _window: _window,
             keys: Vec::new(),
+            keys_prev: Vec::new(),
             frame: 0,
             particles: Vec::new(),
             rng: rand::thread_rng(),
@@ -152,14 +156,35 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 
     println!("{:?}", notes_string);
 
-    for n in notes_string {
-        model
+    for n in &notes_string {
+        let mut is_note_existant:bool = false;
+        for i in 0..model.keys_prev.len(){
+            if model.keys_prev[i] == n.to_string(){
+                is_note_existant = true;
+            }
+        }
+        
+        if is_note_existant{
+            let mut index:usize = 0;
+            let mut most_len:f32 = 0.0;
+            for i in 0..model.keys.len(){
+                if model.keys[i].note == n.parse::<i8>().unwrap(){
+                    if model.keys[i].length > most_len{
+                        index = i;
+                    }
+                }
+            }
+            model.keys[index].length += NOTE_SPEED;
+        }
+        else{
+            model
             .keys
             .push(Note::new(n.parse().unwrap(), -win.h() / 2.0));
+        }
     }
     let mut deleted = 0;
     for i in 0..model.keys.len() {
-        if model.keys[i - deleted].y > win.h() {
+        if model.keys[i - deleted].y > win.h() + model.keys[i-deleted].length {
             if model.keys.len() > 1 {
                 model.keys.remove(0);
                 deleted += 1;
@@ -193,4 +218,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             }
         }
     }
+    // model.keys_prev.clear();
+    // for n in &notes_string{
+    //     model.keys_prev.push(n.to_string());
+    // }
+    model.keys_prev = notes_string.into_iter().map(|x|x.to_string()).collect();
 }
