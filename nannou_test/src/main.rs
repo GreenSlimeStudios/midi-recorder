@@ -1,4 +1,5 @@
 use nannou::prelude::*;
+use rand::Rng;
 use std::fs;
 
 const NOTE_SPEED: f32 = 5.0; // speed of floating notes
@@ -7,7 +8,7 @@ const ENDING_NOTE: i32 = 108; // the note value of the last note on your midi de
 const NOTE_MARGIN: f32 = 2.0; // margin between notes
 const WIDTH_ADJUST: bool = true; // if false the notes are going to have a fixed width if true it will adjust to the window width
 const NOTE_WIDTH: f32 = 10.0; // applies if WIDTH_ADJUST is set to false
-// const PEDAL_NOTE:i8 = 64; // change this for your pedal note so the program ignores it
+                              // const PEDAL_NOTE:i8 = 64; // change this for your pedal note so the program ignores it
 const USE_PARTICLES: bool = false; // Particles
 
 fn main() {
@@ -24,6 +25,7 @@ fn view(app: &App, _model: &Model, frame: Frame) {
     if WIDTH_ADJUST == true {
         note_multiplier = win.w() / (ENDING_NOTE - STARTING_NOTE) as f32;
     }
+    let half_width = win.w() / 2.0;
 
     for note in &_model.keys {
         // if note.note == PEDAL_NOTE {
@@ -32,7 +34,7 @@ fn view(app: &App, _model: &Model, frame: Frame) {
         draw.rect()
             .x_y(
                 (note.note as f32 * note_multiplier)
-                    - (win.w() / 2.0)
+                    - half_width
                     - (STARTING_NOTE as f32 * note_multiplier),
                 note.y,
             )
@@ -45,12 +47,13 @@ fn view(app: &App, _model: &Model, frame: Frame) {
             draw.ellipse()
                 .x_y(
                     (particle.x * note_multiplier)
-                        - (win.w() / 2.0)
+                        - half_width
                         - STARTING_NOTE as f32 * note_multiplier,
                     particle.y,
                 )
                 .w(5.0)
-                .h(5.0);
+                .h(5.0)
+                .hsv(particle.x as f32 / 70.0, 1.0, 1.0);
         }
     }
 
@@ -89,10 +92,12 @@ struct Particle {
     x: f32,
     y: f32,
     lifetime: f32,
+    velocity: Vec2,
 }
 impl Particle {
-    fn new(note: &Note) -> Self {
+    fn new(note: &Note, x_vel: f32) -> Self {
         Particle {
+            velocity: Vec2::new(x_vel, 0.0),
             x: note.note as f32,
             y: note.y,
             lifetime: 0.0,
@@ -101,7 +106,11 @@ impl Particle {
 }
 impl Particle {
     fn update(&mut self) {
-        self.x += 0.3;
+        let mut rng = rand::thread_rng();
+        // self.velocity.x += rng.gen_range(-0.2..0.2);
+        self.velocity.y += -0.8;
+        self.x += self.velocity.x;
+        self.y += self.velocity.y;
         self.lifetime += 1.0;
     }
 }
@@ -157,20 +166,28 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         } else {
             model.keys[i - deleted].update();
             if USE_PARTICLES == true {
-                // if model.frame % 2 == 0{
-                model
-                    .particles
-                    .push(Particle::new(&model.keys[i - deleted]))
-                // }
+                if model.frame % 2 == 0 {
+                    let mut rng = rand::thread_rng();
+                    model.particles.push(Particle::new(
+                        &model.keys[i - deleted],
+                        rng.gen_range(-0.2..0.2),
+                    ))
+                }
             }
         }
     }
     if USE_PARTICLES == true {
+        model
+            .particles
+            .sort_by(|a, b| a.lifetime.partial_cmp(&b.lifetime).unwrap());
         deleted = 0;
         for i in 0..model.particles.len() {
             if model.particles[i - deleted].lifetime > 5.0 {
+                // if model.particles.len() > 1{
+                // model.particles.sort_by(|a, b| a.lifetime.partial_cmp(&b.lifetime).unwrap());
                 model.particles.pop();
                 deleted += 1;
+                // }
             } else {
                 model.particles[i - deleted].update();
             }
