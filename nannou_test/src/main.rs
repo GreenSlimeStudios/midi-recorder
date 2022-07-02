@@ -1,5 +1,5 @@
 use nannou::prelude::*;
-use rand::Rng;
+use rand::{Rng, prelude::ThreadRng};
 use std::fs;
 
 const NOTE_SPEED: f32 = 5.0; // speed of floating notes
@@ -106,7 +106,6 @@ impl Particle {
 }
 impl Particle {
     fn update(&mut self) {
-        let mut rng = rand::thread_rng();
         // self.velocity.x += rng.gen_range(-0.2..0.2);
         self.velocity.y += -0.8;
         self.x += self.velocity.x;
@@ -119,6 +118,7 @@ struct Model {
     keys: Vec<Note>,
     frame: i128,
     particles: Vec<Particle>,
+    rng: ThreadRng,
     // settings: Settings,
 }
 impl Model {
@@ -128,6 +128,7 @@ impl Model {
             keys: Vec::new(),
             frame: 0,
             particles: Vec::new(),
+            rng: rand::thread_rng(),
         }
     }
 }
@@ -167,10 +168,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             model.keys[i - deleted].update();
             if USE_PARTICLES == true {
                 if model.frame % 2 == 0 {
-                    let mut rng = rand::thread_rng();
                     model.particles.push(Particle::new(
                         &model.keys[i - deleted],
-                        rng.gen_range(-0.2..0.2),
+                        model.rng.gen_range(-0.3..0.3),
                     ))
                 }
             }
@@ -182,7 +182,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             .sort_by(|a, b| a.lifetime.partial_cmp(&b.lifetime).unwrap());
         deleted = 0;
         for i in 0..model.particles.len() {
-            if model.particles[i - deleted].lifetime > 5.0 {
+            if model.particles[i - deleted].lifetime > 3.0 {
                 // if model.particles.len() > 1{
                 // model.particles.sort_by(|a, b| a.lifetime.partial_cmp(&b.lifetime).unwrap());
                 model.particles.pop();
