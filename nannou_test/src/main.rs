@@ -10,6 +10,7 @@ const WIDTH_ADJUST: bool = true; // if false the notes are going to have a fixed
 const NOTE_WIDTH: f32 = 10.0; // applies if WIDTH_ADJUST is set to false
                               // const PEDAL_NOTE:i8 = 64; // change this for your pedal note so the program ignores it
 const USE_PARTICLES: bool = false; // Particles
+const ROUNDED_NOTE_EDGES:bool = true; // spawns 2 elipses at the top and the bottom of the note to make it have round edges
 
 fn main() {
     nannou::app(model).simple_window(view).update(update).run();
@@ -41,6 +42,30 @@ fn view(app: &App, _model: &Model, frame: Frame) {
             .w(note_multiplier - NOTE_MARGIN)
             .h(note.length)
             .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+            //.rotate(note.length);
+            if ROUNDED_NOTE_EDGES == true{
+
+                draw.ellipse()
+                .x_y(
+                    (note.note as f32 * note_multiplier)
+                    - half_width
+                    - (STARTING_NOTE as f32 * note_multiplier),
+                    note.y,
+                )
+            .w(note_multiplier - NOTE_MARGIN)
+            .h(note_multiplier / 2.0)
+            .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+            draw.ellipse()
+            .x_y(
+                (note.note as f32 * note_multiplier)
+                - half_width
+                - (STARTING_NOTE as f32 * note_multiplier),
+                note.y - note.length,
+            )
+            .w(note_multiplier - NOTE_MARGIN)
+            .h(note_multiplier / 2.0)
+            .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+        }
     }
     if USE_PARTICLES == true {
         for particle in &_model.particles {
@@ -59,7 +84,6 @@ fn view(app: &App, _model: &Model, frame: Frame) {
 
     draw.to_frame(app, &frame).unwrap();
 }
-#[derive(Clone)]
 struct Note {
     note: i8,
     // x:f32,
@@ -214,19 +238,14 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         deleted = 0;
         for i in 0..model.particles.len() {
             if model.particles[i - deleted].lifetime > 3.0 {
-                // if model.particles.len() > 1{
-                // model.particles.sort_by(|a, b| a.lifetime.partial_cmp(&b.lifetime).unwrap());
-                model.particles.pop();
-                deleted += 1;
-                // }
+                if model.particles.len() > 1 {
+                    model.particles.pop();
+                    deleted += 1;
+                }
             } else {
                 model.particles[i - deleted].update();
             }
         }
     }
-    // model.keys_prev.clear();
-    // for n in &notes_string{
-    //     model.keys_prev.push(n.to_string());
-    // }
     model.keys_prev = notes_string.into_iter().map(|x| x.to_string()).collect();
 }
