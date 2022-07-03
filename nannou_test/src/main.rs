@@ -1,5 +1,5 @@
 use nannou::prelude::*;
-use rand::{Rng, prelude::ThreadRng};
+use rand::{prelude::ThreadRng, Rng};
 use std::fs;
 
 const NOTE_SPEED: f32 = 5.0; // speed of floating notes
@@ -64,11 +64,15 @@ struct Note {
     note: i8,
     // x:f32,
     y: f32,
-    length:f32,
+    length: f32,
 }
 impl Note {
     fn new(n: i8, y: f32) -> Self {
-        Self { note: n, y: y , length: NOTE_SPEED}
+        Self {
+            note: n,
+            y: y,
+            length: NOTE_SPEED,
+        }
     }
     fn update(&mut self) {
         self.y += NOTE_SPEED;
@@ -97,11 +101,11 @@ struct Particle {
     velocity: Vec2,
 }
 impl Particle {
-    fn new(note: &Note, x_vel: f32) -> Self {
+    fn new(note: &Note, x_vel: f32, iterator: i32) -> Self {
         Particle {
             velocity: Vec2::new(x_vel, 0.0),
             x: note.note as f32,
-            y: note.y,
+            y: note.y - (NOTE_SPEED * iterator as f32),
             lifetime: 0.0,
         }
     }
@@ -157,34 +161,33 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     println!("{:?}", notes_string);
 
     for n in &notes_string {
-        let mut is_note_existant:bool = false;
-        for i in 0..model.keys_prev.len(){
-            if model.keys_prev[i] == n.to_string(){
+        let mut is_note_existant: bool = false;
+        for i in 0..model.keys_prev.len() {
+            if model.keys_prev[i] == n.to_string() {
                 is_note_existant = true;
             }
         }
-        
-        if is_note_existant{
-            let mut index:usize = 0;
-            let mut most_len:f32 = 0.0;
-            for i in 0..model.keys.len(){
-                if model.keys[i].note == n.parse::<i8>().unwrap(){
-                    if model.keys[i].length > most_len{
+
+        if is_note_existant {
+            let mut index: usize = 0;
+            let mut most_len: f32 = 0.0;
+            for i in 0..model.keys.len() {
+                if model.keys[i].note == n.parse::<i8>().unwrap() {
+                    if model.keys[i].length > most_len {
                         index = i;
                     }
                 }
             }
             model.keys[index].length += NOTE_SPEED;
-        }
-        else{
+        } else {
             model
-            .keys
-            .push(Note::new(n.parse().unwrap(), -win.h() / 2.0));
+                .keys
+                .push(Note::new(n.parse().unwrap(), -win.h() / 2.0));
         }
     }
     let mut deleted = 0;
     for i in 0..model.keys.len() {
-        if model.keys[i - deleted].y > win.h() + model.keys[i-deleted].length {
+        if model.keys[i - deleted].y > win.h() + model.keys[i - deleted].length {
             if model.keys.len() > 1 {
                 model.keys.remove(0);
                 deleted += 1;
@@ -193,10 +196,13 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             model.keys[i - deleted].update();
             if USE_PARTICLES == true {
                 if model.frame % 2 == 0 {
-                    model.particles.push(Particle::new(
-                        &model.keys[i - deleted],
-                        model.rng.gen_range(-0.3..0.3),
-                    ))
+                    for j in 0..(model.keys[i - deleted].length / NOTE_SPEED as f32) as i32 {
+                        model.particles.push(Particle::new(
+                            &model.keys[i as usize - deleted],
+                            model.rng.gen_range(-0.3..0.3),
+                            j,
+                        ))
+                    }
                 }
             }
         }
@@ -222,5 +228,5 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     // for n in &notes_string{
     //     model.keys_prev.push(n.to_string());
     // }
-    model.keys_prev = notes_string.into_iter().map(|x|x.to_string()).collect();
+    model.keys_prev = notes_string.into_iter().map(|x| x.to_string()).collect();
 }
