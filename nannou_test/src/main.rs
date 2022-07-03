@@ -10,25 +10,26 @@ const WIDTH_ADJUST: bool = true; // if false the notes are going to have a fixed
 const NOTE_WIDTH: f32 = 10.0; // applies if WIDTH_ADJUST is set to false
                               // const PEDAL_NOTE:i8 = 64; // change this for your pedal note so the program ignores it
 const USE_PARTICLES: bool = false; // Particles
-const ROUNDED_NOTE_EDGES:bool = true; // spawns 2 elipses at the top and the bottom of the note to make it have round edges
+const ROUNDED_NOTE_EDGES: bool = true; // spawns 2 elipses at the top and the bottom of the note to make it have round edges
+const NOTE_THEME: NoteThemes = NoteThemes::RainbowHorizontal; // color theme of the notes
 
 fn main() {
     nannou::app(model).simple_window(view).update(update).run();
 }
 
-fn view(app: &App, _model: &Model, frame: Frame) {
+fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
 
     let win = app.window_rect();
     draw.background().color(BLACK);
 
-    let mut note_multiplier: f32 = NOTE_WIDTH;
-    if WIDTH_ADJUST == true {
-        note_multiplier = win.w() / (ENDING_NOTE - STARTING_NOTE) as f32;
+    let mut note_multiplier: f32 = model.settings.note_width;
+    if model.settings.use_width_adjust == true {
+        note_multiplier = win.w() / (model.settings.ending_note - model.settings.starting_note) as f32;
     }
     let half_width = win.w() / 2.0;
 
-    for note in &_model.keys {
+    for note in &model.keys {
         // if note.note == PEDAL_NOTE {
         //     continue;
         // }
@@ -36,44 +37,43 @@ fn view(app: &App, _model: &Model, frame: Frame) {
             .x_y(
                 (note.note as f32 * note_multiplier)
                     - half_width
-                    - (STARTING_NOTE as f32 * note_multiplier),
+                    - (model.settings.starting_note as f32 * note_multiplier),
                 note.y - note.length / 2.0,
             )
-            .w(note_multiplier - NOTE_MARGIN)
+            .w(note_multiplier - model.settings.note_margin)
             .h(note.length)
             .hsv(note.note as f32 / 70.0, 1.0, 1.0);
-            //.rotate(note.length);
-            if ROUNDED_NOTE_EDGES == true{
-
-                draw.ellipse()
+        //.rotate(note.length);
+        if model.settings.use_rounded_edges == true {
+            draw.ellipse()
                 .x_y(
                     (note.note as f32 * note_multiplier)
-                    - half_width
-                    - (STARTING_NOTE as f32 * note_multiplier),
+                        - half_width
+                        - (model.settings.starting_note as f32 * note_multiplier),
                     note.y,
                 )
-            .w(note_multiplier - NOTE_MARGIN)
-            .h(note_multiplier / 2.0)
-            .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+                .w(note_multiplier - model.settings.note_margin)
+                .h(note_multiplier / 2.0)
+                .hsv(note.note as f32 / 70.0, 1.0, 1.0);
             draw.ellipse()
-            .x_y(
-                (note.note as f32 * note_multiplier)
-                - half_width
-                - (STARTING_NOTE as f32 * note_multiplier),
-                note.y - note.length,
-            )
-            .w(note_multiplier - NOTE_MARGIN)
-            .h(note_multiplier / 2.0)
-            .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+                .x_y(
+                    (note.note as f32 * note_multiplier)
+                        - half_width
+                        - (model.settings.starting_note as f32 * note_multiplier),
+                    note.y - note.length,
+                )
+                .w(note_multiplier - model.settings.note_margin)
+                .h(note_multiplier / 2.0)
+                .hsv(note.note as f32 / 70.0, 1.0, 1.0);
         }
     }
-    if USE_PARTICLES == true {
-        for particle in &_model.particles {
+    if model.settings.use_particles == true {
+        for particle in &model.particles {
             draw.ellipse()
                 .x_y(
                     (particle.x * note_multiplier)
                         - half_width
-                        - STARTING_NOTE as f32 * note_multiplier,
+                        - model.settings.starting_note as f32 * note_multiplier,
                     particle.y,
                 )
                 .w(5.0)
@@ -91,15 +91,15 @@ struct Note {
     length: f32,
 }
 impl Note {
-    fn new(n: i8, y: f32) -> Self {
+    fn new(n: i8, y: f32, model: &Model) -> Self {
         Self {
             note: n,
             y: y,
-            length: NOTE_SPEED,
+            length: model.settings.note_speed,
         }
     }
-    fn update(&mut self) {
-        self.y += NOTE_SPEED;
+    fn update(&mut self, note_speed: &f32) {
+        self.y += note_speed;
     }
 }
 struct Settings {
@@ -111,6 +111,22 @@ struct Settings {
     note_width: f32,
     use_particles: bool,
     theme: NoteThemes,
+    use_rounded_edges: bool,
+}
+impl Settings {
+    fn from_consts() -> Self {
+        Settings {
+            note_speed: NOTE_SPEED,
+            starting_note: STARTING_NOTE,
+            ending_note: ENDING_NOTE,
+            note_margin: NOTE_MARGIN,
+            use_width_adjust: WIDTH_ADJUST,
+            note_width: NOTE_WIDTH,
+            use_particles: USE_PARTICLES,
+            theme: NOTE_THEME,
+            use_rounded_edges: ROUNDED_NOTE_EDGES,
+        }
+    }
 }
 #[derive(PartialEq)]
 enum NoteThemes {
@@ -150,7 +166,7 @@ struct Model {
     frame: i128,
     particles: Vec<Particle>,
     rng: ThreadRng,
-    // settings: Settings,
+    settings: Settings,
 }
 impl Model {
     fn new(_window: window::Id) -> Self {
@@ -161,6 +177,7 @@ impl Model {
             frame: 0,
             particles: Vec::new(),
             rng: rand::thread_rng(),
+            settings: Settings::from_consts(),
         }
     }
 }
@@ -202,11 +219,11 @@ fn update(app: &App, model: &mut Model, _update: Update) {
                     }
                 }
             }
-            model.keys[index].length += NOTE_SPEED;
+            model.keys[index].length += model.settings.note_speed;
         } else {
             model
                 .keys
-                .push(Note::new(n.parse().unwrap(), -win.h() / 2.0));
+                .push(Note::new(n.parse().unwrap(), -win.h() / 2.0, &model));
         }
     }
     let mut deleted = 0;
@@ -217,10 +234,10 @@ fn update(app: &App, model: &mut Model, _update: Update) {
                 deleted += 1;
             }
         } else {
-            model.keys[i - deleted].update();
+            model.keys[i - deleted].update(&model.settings.note_speed);
             if USE_PARTICLES == true {
                 if model.frame % 2 == 0 {
-                    for j in 0..(model.keys[i - deleted].length / NOTE_SPEED as f32) as i32 {
+                    for j in 0..(model.keys[i - deleted].length / model.settings.note_speed as f32) as i32 {
                         model.particles.push(Particle::new(
                             &model.keys[i as usize - deleted],
                             model.rng.gen_range(-0.3..0.3),
@@ -231,7 +248,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             }
         }
     }
-    if USE_PARTICLES == true {
+    if model.settings.use_particles == true {
         model
             .particles
             .sort_by(|a, b| a.lifetime.partial_cmp(&b.lifetime).unwrap());
