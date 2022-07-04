@@ -1,4 +1,5 @@
 use nannou::prelude::*;
+use nannou_egui::{self, egui, Egui};
 use rand::{prelude::ThreadRng, Rng};
 use std::fs;
 
@@ -14,7 +15,7 @@ const ROUNDED_NOTE_EDGES: bool = true; // spawns 2 elipses at the top and the bo
 const NOTE_THEME: NoteThemes = NoteThemes::RainbowHorizontal; // color theme of the notes
 
 fn main() {
-    nannou::app(model).simple_window(view).update(update).run();
+    nannou::app(model).update(update).run();
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
@@ -82,8 +83,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 .hsv(particle.x as f32 / 70.0, 1.0, 1.0);
         }
     }
-
     draw.to_frame(app, &frame).unwrap();
+    model.egui.draw_to_frame(&frame).unwrap();
 }
 struct Note {
     note: i8,
@@ -92,11 +93,11 @@ struct Note {
     length: f32,
 }
 impl Note {
-    fn new(n: i8, y: f32, model: &Model) -> Self {
+    fn new(n: i8, y: f32, note_speed: f32) -> Self {
         Self {
             note: n,
             y: y,
-            length: model.settings.note_speed,
+            length: note_speed,
         }
     }
     fn update(&mut self, note_speed: &f32) {
@@ -168,9 +169,10 @@ struct Model {
     particles: Vec<Particle>,
     rng: ThreadRng,
     settings: Settings,
+    egui: Egui,
 }
 impl Model {
-    fn new(_window: window::Id, settings: Settings) -> Self {
+    fn new(_window: window::Id, settings: Settings, egui: Egui) -> Self {
         Self {
             _window: _window,
             keys: Vec::new(),
@@ -179,12 +181,21 @@ impl Model {
             particles: Vec::new(),
             rng: rand::thread_rng(),
             settings: settings,
+            egui: egui,
         }
     }
 }
 
 fn model(app: &App) -> Model {
     let _window = app.new_window().view(view).build().unwrap();
+
+    let window_id = app
+        .new_window()
+        .view(view)
+        .raw_event(raw_window_event)
+        .build()
+        .unwrap();
+
     let mut settings: Settings = Settings::from_consts();
 
     let contents =
@@ -211,14 +222,51 @@ fn model(app: &App) -> Model {
             _ => (),
         }
     }
+    let window = app.window(window_id).unwrap();
+    let egui = Egui::from_window(&window);
 
-    return Model::new(_window, settings);
+    return Model::new(_window, settings, egui);
+}
+fn raw_window_event(_app: &App, model: &mut Model, event: &nannou::winit::event::WindowEvent) {
+    // Let egui handle things like keyboard and mouse input.
+    model.egui.handle_raw_event(event);
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
     model.frame += 1;
 
+    let egui = &mut model.egui;
+    let settings = &mut model.settings;
     let win = app.window_rect();
+
+    // egui.set_elapsed_time(update.since_start);
+    let ctx = egui.begin_frame();
+
+    egui::Window::new("Settings").show(&ctx, |ui| {
+        // Resolution slider
+        ui.label("Note Speed:");
+        ui.add(egui::Slider::new(&mut settings.note_speed, 1.0..=40.0));
+
+        // Scale slider
+        ui.label("Note Margin:");
+        ui.add(egui::Slider::new(&mut settings.note_margin, 0.0..=5.0));
+
+        ui.label("Strting Note:");
+        ui.add(egui::Slider::new(&mut settings.starting_note, 0..=200));
+
+        // Rotation slider
+        ui.label("Ending Note:");
+        ui.add(egui::Slider::new(&mut settings.ending_note, 0..=200));
+
+        let particles = ui.checkbox(&mut settings.use_particles, "Particles");
+        let edges = ui.checkbox(&mut settings.use_rounded_edges, "Rounded edges");
+        let width_adjust = ui.checkbox(&mut settings.use_width_adjust, "auto width adjust");
+
+        if settings.use_width_adjust == false {
+            ui.label("Note width:");
+            ui.add(egui::Slider::new(&mut settings.note_width, 0.0..=50.0));
+        }
+    });
 
     let contents =
         fs::read_to_string("../midi/info.txt").expect("Something went wrong reading the file");
@@ -247,11 +295,13 @@ fn update(app: &App, model: &mut Model, _update: Update) {
                     }
                 }
             }
-            model.keys[index].length += model.settings.note_speed;
+            model.keys[index].length += settings.note_speed;
         } else {
-            model
-                .keys
-                .push(Note::new(n.parse().unwrap(), -win.h() / 2.0, &model));
+            model.keys.push(Note::new(
+                n.parse().unwrap(),
+                -win.h() / 2.0,
+                settings.note_speed,
+            ));
         }
     }
     let mut deleted = 0;
