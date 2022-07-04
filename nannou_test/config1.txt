@@ -4,6 +4,6 @@ ending_note: 108
 note_margin: 2.0
 use_width_adjust: true
 note_width: 10.0
-use_particles: true
+use_particles: false
 theme: rainbow_horizontal
 use_rounded_edges: true
