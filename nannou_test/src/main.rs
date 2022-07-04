@@ -29,8 +29,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     let mut note_multiplier: f32 = settings.note_width;
     if settings.use_width_adjust == true {
-        note_multiplier =
-            win.w() / (settings.ending_note - settings.starting_note) as f32;
+        note_multiplier = win.w() / (settings.ending_note - settings.starting_note) as f32;
     }
     let half_width = win.w() / 2.0;
 
@@ -285,16 +284,16 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         }
         let save_settings = ui.button("Save Settings");
         if save_settings.clicked() {
-            save_settings_to_file("config_user.txt",&settings);
+            save_settings_to_file("config_user.txt", &settings);
         }
         let _show_save_files_resp = ui.checkbox(&mut settings.show_save_files, "more save slots");
 
-        if settings.show_save_files{
-            for i in 0..6{
-                let mut load_label:String = "Load from slot ".to_string();
+        if settings.show_save_files {
+            for i in 0..6 {
+                let mut load_label: String = "Load from slot ".to_string();
                 load_label.push_str(i.to_string().as_str());
 
-                let mut file:String = "config_slot_".to_string();
+                let mut file: String = "config_slot_".to_string();
                 file.push_str(i.to_string().as_str());
                 file.push_str(".txt");
 
@@ -302,19 +301,18 @@ fn update(app: &App, model: &mut Model, _update: Update) {
                 if load_user_settings.clicked() {
                     read_settings_from_file(&file, settings);
                 }
-
             }
-            for i in 0..6{
-                let mut file:String = "config_slot_".to_string();
+            for i in 0..6 {
+                let mut file: String = "config_slot_".to_string();
                 file.push_str(i.to_string().as_str());
                 file.push_str(".txt");
-                
-                let mut save_label:String = "Save to slot  ".to_string();
+
+                let mut save_label: String = "Save to slot  ".to_string();
                 save_label.push_str(i.to_string().as_str());
 
                 let save_settings = ui.button(save_label);
                 if save_settings.clicked() {
-                    save_settings_to_file(&file,&settings);
+                    save_settings_to_file(&file, &settings);
                 }
             }
         }
@@ -367,8 +365,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             model.keys[i - deleted].update(&settings.note_speed);
             if settings.use_particles == true {
                 if model.frame % 2 == 0 {
-                    for j in 0..(model.keys[i - deleted].length / settings.note_speed as f32)
-                        as i32
+                    for j in 0..(model.keys[i - deleted].length / settings.note_speed as f32) as i32
                     {
                         model.particles.push(Particle::new(
                             &model.keys[i as usize - deleted],
@@ -400,7 +397,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.keys_prev = notes_string.into_iter().map(|x| x.to_string()).collect();
 }
 
-fn save_settings_to_file(path:&str,settings: &Settings) {
+fn save_settings_to_file(path: &str, settings: &Settings) {
     let mut out: String = String::new();
 
     let mut value: String = "note_speed: ".to_string();
