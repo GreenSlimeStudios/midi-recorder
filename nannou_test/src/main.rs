@@ -117,6 +117,7 @@ struct Settings {
     use_particles: bool,
     theme: NoteThemes,
     use_rounded_edges: bool,
+    show_save_files: bool,
 }
 impl Settings {
     fn from_consts() -> Self {
@@ -130,6 +131,7 @@ impl Settings {
             use_particles: USE_PARTICLES,
             theme: NOTE_THEME,
             use_rounded_edges: ROUNDED_NOTE_EDGES,
+            show_save_files: false,
         }
     }
 }
@@ -277,14 +279,44 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             read_settings_from_file("config1.txt", settings);
         }
 
-        let reset_settings = ui.button("Load from save file");
-        if reset_settings.clicked() {
+        let load_user_settings = ui.button("Load from save file");
+        if load_user_settings.clicked() {
             read_settings_from_file("config_user.txt", settings);
         }
-
         let save_settings = ui.button("Save Settings");
         if save_settings.clicked() {
-            save_settings_to_file(&settings);
+            save_settings_to_file("config_user.txt",&settings);
+        }
+        let _show_save_files_resp = ui.checkbox(&mut settings.show_save_files, "more save slots");
+
+        if settings.show_save_files{
+            for i in 0..6{
+                let mut load_label:String = "Load from slot ".to_string();
+                load_label.push_str(i.to_string().as_str());
+
+                let mut file:String = "config_slot_".to_string();
+                file.push_str(i.to_string().as_str());
+                file.push_str(".txt");
+
+                let load_user_settings = ui.button(load_label);
+                if load_user_settings.clicked() {
+                    read_settings_from_file(&file, settings);
+                }
+
+            }
+            for i in 0..6{
+                let mut file:String = "config_slot_".to_string();
+                file.push_str(i.to_string().as_str());
+                file.push_str(".txt");
+                
+                let mut save_label:String = "Save to slot  ".to_string();
+                save_label.push_str(i.to_string().as_str());
+
+                let save_settings = ui.button(save_label);
+                if save_settings.clicked() {
+                    save_settings_to_file(&file,&settings);
+                }
+            }
         }
     });
 
@@ -368,7 +400,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.keys_prev = notes_string.into_iter().map(|x| x.to_string()).collect();
 }
 
-fn save_settings_to_file(settings: &Settings) {
+fn save_settings_to_file(path:&str,settings: &Settings) {
     let mut out: String = String::new();
 
     let mut value: String = "note_speed: ".to_string();
@@ -421,6 +453,6 @@ fn save_settings_to_file(settings: &Settings) {
     out.push_str(&value);
     out.push_str("\n");
 
-    let mut ofile = File::create("config_user.txt").expect("unable to create file");
+    let mut ofile = File::create(path).expect("unable to create file");
     ofile.write_all(out.as_bytes()).expect("unable to write");
 }
