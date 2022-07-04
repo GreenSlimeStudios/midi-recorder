@@ -187,21 +187,9 @@ impl Model {
         }
     }
 }
-
-fn model(app: &App) -> Model {
-    let _window = app.new_window().view(view).build().unwrap();
-
-    let window_id = app
-        .new_window()
-        .view(view)
-        .raw_event(raw_window_event)
-        .build()
-        .unwrap();
-
-    let mut settings: Settings = Settings::from_consts();
-
+fn read_settings_from_file(path: &str,settings: &mut Settings){
     let contents =
-        fs::read_to_string("config_user.txt").expect("Something went wrong reading the config file");
+        fs::read_to_string(path).expect("Something went wrong reading the config file");
     let mut config_items: Vec<&str> = contents.split("\n").collect();
     for item in config_items {
         let values: Vec<&str> = item.split(" ").collect();
@@ -224,6 +212,21 @@ fn model(app: &App) -> Model {
             _ => (),
         }
     }
+}
+
+fn model(app: &App) -> Model {
+    let _window = app.new_window().view(view).build().unwrap();
+
+    let window_id = app
+        .new_window()
+        .view(view)
+        .raw_event(raw_window_event)
+        .build()
+        .unwrap();
+
+    let mut settings: Settings = Settings::from_consts();
+    read_settings_from_file("config_user.txt",&mut settings);
+    
     let window = app.window(window_id).unwrap();
     let egui = Egui::from_window(&window);
 
@@ -268,6 +271,11 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         if settings.use_width_adjust == false {
             ui.label("Note width:");
             ui.add(egui::Slider::new(&mut settings.note_width, 0.0..=50.0));
+        }
+
+        let reset_settings = ui.button("Reset Settings to default");
+        if reset_settings.clicked() {
+            read_settings_from_file("config1.txt", settings);
         }
 
         let save_settings = ui.button("Save Settings");
