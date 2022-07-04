@@ -23,13 +23,14 @@ fn main() {
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
 
+    let settings = &model.settings;
     let win = app.window_rect();
     draw.background().color(BLACK);
 
-    let mut note_multiplier: f32 = model.settings.note_width;
-    if model.settings.use_width_adjust == true {
+    let mut note_multiplier: f32 = settings.note_width;
+    if settings.use_width_adjust == true {
         note_multiplier =
-            win.w() / (model.settings.ending_note - model.settings.starting_note) as f32;
+            win.w() / (settings.ending_note - settings.starting_note) as f32;
     }
     let half_width = win.w() / 2.0;
 
@@ -41,43 +42,43 @@ fn view(app: &App, model: &Model, frame: Frame) {
             .x_y(
                 (note.note as f32 * note_multiplier)
                     - half_width
-                    - (model.settings.starting_note as f32 * note_multiplier),
+                    - (settings.starting_note as f32 * note_multiplier),
                 note.y - note.length / 2.0,
             )
-            .w(note_multiplier - model.settings.note_margin)
+            .w(note_multiplier - settings.note_margin)
             .h(note.length)
             .hsv(note.note as f32 / 70.0, 1.0, 1.0);
         //.rotate(note.length);
-        if model.settings.use_rounded_edges == true {
+        if settings.use_rounded_edges == true {
             draw.ellipse()
                 .x_y(
                     (note.note as f32 * note_multiplier)
                         - half_width
-                        - (model.settings.starting_note as f32 * note_multiplier),
+                        - (settings.starting_note as f32 * note_multiplier),
                     note.y,
                 )
-                .w(note_multiplier - model.settings.note_margin)
+                .w(note_multiplier - settings.note_margin)
                 .h(note_multiplier / 2.0)
                 .hsv(note.note as f32 / 70.0, 1.0, 1.0);
             draw.ellipse()
                 .x_y(
                     (note.note as f32 * note_multiplier)
                         - half_width
-                        - (model.settings.starting_note as f32 * note_multiplier),
+                        - (settings.starting_note as f32 * note_multiplier),
                     note.y - note.length,
                 )
-                .w(note_multiplier - model.settings.note_margin)
+                .w(note_multiplier - settings.note_margin)
                 .h(note_multiplier / 2.0)
                 .hsv(note.note as f32 / 70.0, 1.0, 1.0);
         }
     }
-    if model.settings.use_particles == true {
+    if settings.use_particles == true {
         for particle in &model.particles {
             draw.ellipse()
                 .x_y(
                     (particle.x * note_multiplier)
                         - half_width
-                        - model.settings.starting_note as f32 * note_multiplier,
+                        - settings.starting_note as f32 * note_multiplier,
                     particle.y,
                 )
                 .w(5.0)
@@ -187,9 +188,8 @@ impl Model {
         }
     }
 }
-fn read_settings_from_file(path: &str,settings: &mut Settings){
-    let contents =
-        fs::read_to_string(path).expect("Something went wrong reading the config file");
+fn read_settings_from_file(path: &str, settings: &mut Settings) {
+    let contents = fs::read_to_string(path).expect("Something went wrong reading the config file");
     let mut config_items: Vec<&str> = contents.split("\n").collect();
     for item in config_items {
         let values: Vec<&str> = item.split(" ").collect();
@@ -225,8 +225,8 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let mut settings: Settings = Settings::from_consts();
-    read_settings_from_file("config_user.txt",&mut settings);
-    
+    read_settings_from_file("config_user.txt", &mut settings);
+
     let window = app.window(window_id).unwrap();
     let egui = Egui::from_window(&window);
 
@@ -236,7 +236,6 @@ fn raw_window_event(_app: &App, model: &mut Model, event: &nannou::winit::event:
     // Let egui handle things like keyboard and mouse input.
     model.egui.handle_raw_event(event);
 }
-
 
 fn update(app: &App, model: &mut Model, _update: Update) {
     model.frame += 1;
@@ -264,18 +263,23 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         ui.label("Ending Note:");
         ui.add(egui::Slider::new(&mut settings.ending_note, 0..=200));
 
-        let particles = ui.checkbox(&mut settings.use_particles, "Particles");
-        let edges = ui.checkbox(&mut settings.use_rounded_edges, "Rounded edges");
-        let width_adjust = ui.checkbox(&mut settings.use_width_adjust, "auto width adjust");
+        let _particles = ui.checkbox(&mut settings.use_particles, "Particles");
+        let _edges = ui.checkbox(&mut settings.use_rounded_edges, "Rounded edges");
+        let _width_adjust = ui.checkbox(&mut settings.use_width_adjust, "auto width adjust");
 
         if settings.use_width_adjust == false {
             ui.label("Note width:");
             ui.add(egui::Slider::new(&mut settings.note_width, 0.0..=50.0));
         }
 
-        let reset_settings = ui.button("Reset Settings to default");
+        let reset_settings = ui.button("Reset to default");
         if reset_settings.clicked() {
             read_settings_from_file("config1.txt", settings);
+        }
+
+        let reset_settings = ui.button("Load from save file");
+        if reset_settings.clicked() {
+            read_settings_from_file("config_user.txt", settings);
         }
 
         let save_settings = ui.button("Save Settings");
@@ -328,24 +332,24 @@ fn update(app: &App, model: &mut Model, _update: Update) {
                 deleted += 1;
             }
         } else {
-            model.keys[i - deleted].update(&model.settings.note_speed);
-            if model.settings.use_particles == true {
+            model.keys[i - deleted].update(&settings.note_speed);
+            if settings.use_particles == true {
                 if model.frame % 2 == 0 {
-                    for j in 0..(model.keys[i - deleted].length / model.settings.note_speed as f32)
+                    for j in 0..(model.keys[i - deleted].length / settings.note_speed as f32)
                         as i32
                     {
                         model.particles.push(Particle::new(
                             &model.keys[i as usize - deleted],
                             model.rng.gen_range(-0.3..0.3),
                             j,
-                            model.settings.note_speed,
+                            settings.note_speed,
                         ))
                     }
                 }
             }
         }
     }
-    if model.settings.use_particles == true {
+    if settings.use_particles == true {
         model
             .particles
             .sort_by(|a, b| a.lifetime.partial_cmp(&b.lifetime).unwrap());
@@ -364,59 +368,59 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.keys_prev = notes_string.into_iter().map(|x| x.to_string()).collect();
 }
 
-    fn save_settings_to_file(settings: &Settings){
-        let mut out: String = String::new();
-    
-        let mut value: String = "note_speed: ".to_string();
-        value.push_str(settings.note_speed.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "starting_note: ".to_string();
-        value.push_str(settings.starting_note.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "ending_note: ".to_string();
-        value.push_str(settings.ending_note.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "note_margin: ".to_string();
-        value.push_str(settings.note_margin.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "use_width_adjust: ".to_string();
-        value.push_str(settings.use_width_adjust.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "note_width: ".to_string();
-        value.push_str(settings.note_width.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "use_particles: ".to_string();
-        value.push_str(settings.use_particles.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "theme: ".to_string();
-        match settings.theme{
-           NoteThemes::RainbowHorizontal => value.push_str("rainbow_horizontal"),
-           NoteThemes::RainbowVertical => value.push_str("rainbow_vertical"),
-           NoteThemes::Classic => value.push_str("classic"),
-            _ =>  value.push_str("rainbow_horizontal")
-        }
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut value: String = "use_rounded_edges: ".to_string();
-        value.push_str(settings.use_rounded_edges.to_string().as_str());
-        out.push_str(&value);
-        out.push_str("\n");
-    
-        let mut ofile = File::create("config_user.txt").expect("unable to create file");
-        ofile.write_all(out.as_bytes()).expect("unable to write");
+fn save_settings_to_file(settings: &Settings) {
+    let mut out: String = String::new();
+
+    let mut value: String = "note_speed: ".to_string();
+    value.push_str(settings.note_speed.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "starting_note: ".to_string();
+    value.push_str(settings.starting_note.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "ending_note: ".to_string();
+    value.push_str(settings.ending_note.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "note_margin: ".to_string();
+    value.push_str(settings.note_margin.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "use_width_adjust: ".to_string();
+    value.push_str(settings.use_width_adjust.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "note_width: ".to_string();
+    value.push_str(settings.note_width.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "use_particles: ".to_string();
+    value.push_str(settings.use_particles.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "theme: ".to_string();
+    match settings.theme {
+        NoteThemes::RainbowHorizontal => value.push_str("rainbow_horizontal"),
+        NoteThemes::RainbowVertical => value.push_str("rainbow_vertical"),
+        NoteThemes::Classic => value.push_str("classic"),
+        _ => value.push_str("rainbow_horizontal"),
     }
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut value: String = "use_rounded_edges: ".to_string();
+    value.push_str(settings.use_rounded_edges.to_string().as_str());
+    out.push_str(&value);
+    out.push_str("\n");
+
+    let mut ofile = File::create("config_user.txt").expect("unable to create file");
+    ofile.write_all(out.as_bytes()).expect("unable to write");
+}
