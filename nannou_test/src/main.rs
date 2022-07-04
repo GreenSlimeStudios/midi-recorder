@@ -25,7 +25,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     let mut note_multiplier: f32 = model.settings.note_width;
     if model.settings.use_width_adjust == true {
-        note_multiplier = win.w() / (model.settings.ending_note - model.settings.starting_note) as f32;
+        note_multiplier =
+            win.w() / (model.settings.ending_note - model.settings.starting_note) as f32;
     }
     let half_width = win.w() / 2.0;
 
@@ -141,11 +142,11 @@ struct Particle {
     velocity: Vec2,
 }
 impl Particle {
-    fn new(note: &Note, x_vel: f32, iterator: i32) -> Self {
+    fn new(note: &Note, x_vel: f32, iterator: i32, note_speed: f32) -> Self {
         Particle {
             velocity: Vec2::new(x_vel, 0.0),
             x: note.note as f32,
-            y: note.y - (NOTE_SPEED * iterator as f32),
+            y: note.y - (note_speed * iterator as f32),
             lifetime: 0.0,
         }
     }
@@ -169,7 +170,7 @@ struct Model {
     settings: Settings,
 }
 impl Model {
-    fn new(_window: window::Id) -> Self {
+    fn new(_window: window::Id, settings: Settings) -> Self {
         Self {
             _window: _window,
             keys: Vec::new(),
@@ -177,14 +178,41 @@ impl Model {
             frame: 0,
             particles: Vec::new(),
             rng: rand::thread_rng(),
-            settings: Settings::from_consts(),
+            settings: settings,
         }
     }
 }
 
 fn model(app: &App) -> Model {
     let _window = app.new_window().view(view).build().unwrap();
-    return Model::new(_window);
+    let mut settings: Settings = Settings::from_consts();
+
+    let contents =
+        fs::read_to_string("config1.txt").expect("Something went wrong reading the config file");
+    let mut config_items: Vec<&str> = contents.split("\n").collect();
+    for item in config_items {
+        let values: Vec<&str> = item.split(" ").collect();
+        println!("{:?}", values);
+        match values[0] {
+            "note_speed:" => settings.note_speed = values[1].parse().unwrap(),
+            "starting_note:" => settings.starting_note = values[1].parse().unwrap(),
+            "ending_note:" => settings.ending_note = values[1].parse().unwrap(),
+            "note_margin:" => settings.note_margin = values[1].parse().unwrap(),
+            "use_width_adjust:" => settings.use_width_adjust = values[1].parse().unwrap(),
+            "note_width:" => settings.note_width = values[1].parse().unwrap(),
+            "use_particles:" => settings.use_particles = values[1].parse().unwrap(),
+            "theme:" => match values[1] {
+                "rainbow_horizontal" => settings.theme = NoteThemes::RainbowHorizontal,
+                "rainbow_vertical" => settings.theme = NoteThemes::RainbowVertical,
+                "classic" => settings.theme = NoteThemes::Classic,
+                _ => settings.theme = NoteThemes::RainbowHorizontal,
+            },
+            "use_rounded_edges:" => settings.use_rounded_edges = values[1].parse().unwrap(),
+            _ => (),
+        }
+    }
+
+    return Model::new(_window, settings);
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
@@ -235,13 +263,16 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             }
         } else {
             model.keys[i - deleted].update(&model.settings.note_speed);
-            if USE_PARTICLES == true {
+            if model.settings.use_particles == true {
                 if model.frame % 2 == 0 {
-                    for j in 0..(model.keys[i - deleted].length / model.settings.note_speed as f32) as i32 {
+                    for j in 0..(model.keys[i - deleted].length / model.settings.note_speed as f32)
+                        as i32
+                    {
                         model.particles.push(Particle::new(
                             &model.keys[i as usize - deleted],
                             model.rng.gen_range(-0.3..0.3),
                             j,
+                            model.settings.note_speed,
                         ))
                     }
                 }
