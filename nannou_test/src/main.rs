@@ -2,6 +2,8 @@ use nannou::prelude::*;
 use nannou_egui::{self, egui, Egui};
 use rand::{prelude::ThreadRng, Rng};
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 
 const NOTE_SPEED: f32 = 5.0; // speed of floating notes
 const STARTING_NOTE: i32 = 21; // the note value of the first note on your midi device
@@ -199,7 +201,7 @@ fn model(app: &App) -> Model {
     let mut settings: Settings = Settings::from_consts();
 
     let contents =
-        fs::read_to_string("config1.txt").expect("Something went wrong reading the config file");
+        fs::read_to_string("config_user.txt").expect("Something went wrong reading the config file");
     let mut config_items: Vec<&str> = contents.split("\n").collect();
     for item in config_items {
         let values: Vec<&str> = item.split(" ").collect();
@@ -231,6 +233,7 @@ fn raw_window_event(_app: &App, model: &mut Model, event: &nannou::winit::event:
     // Let egui handle things like keyboard and mouse input.
     model.egui.handle_raw_event(event);
 }
+
 
 fn update(app: &App, model: &mut Model, _update: Update) {
     model.frame += 1;
@@ -265,6 +268,11 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         if settings.use_width_adjust == false {
             ui.label("Note width:");
             ui.add(egui::Slider::new(&mut settings.note_width, 0.0..=50.0));
+        }
+
+        let save_settings = ui.button("Save Settings");
+        if save_settings.clicked() {
+            save_settings_to_file(&settings);
         }
     });
 
@@ -347,3 +355,60 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     }
     model.keys_prev = notes_string.into_iter().map(|x| x.to_string()).collect();
 }
+
+    fn save_settings_to_file(settings: &Settings){
+        let mut out: String = String::new();
+    
+        let mut value: String = "note_speed: ".to_string();
+        value.push_str(settings.note_speed.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "starting_note: ".to_string();
+        value.push_str(settings.starting_note.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "ending_note: ".to_string();
+        value.push_str(settings.ending_note.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "note_margin: ".to_string();
+        value.push_str(settings.note_margin.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "use_width_adjust: ".to_string();
+        value.push_str(settings.use_width_adjust.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "note_width: ".to_string();
+        value.push_str(settings.note_width.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "use_particles: ".to_string();
+        value.push_str(settings.use_particles.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "theme: ".to_string();
+        match settings.theme{
+           NoteThemes::RainbowHorizontal => value.push_str("rainbow_horizontal"),
+           NoteThemes::RainbowVertical => value.push_str("rainbow_vertical"),
+           NoteThemes::Classic => value.push_str("classic"),
+            _ =>  value.push_str("rainbow_horizontal")
+        }
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut value: String = "use_rounded_edges: ".to_string();
+        value.push_str(settings.use_rounded_edges.to_string().as_str());
+        out.push_str(&value);
+        out.push_str("\n");
+    
+        let mut ofile = File::create("config_user.txt").expect("unable to create file");
+        ofile.write_all(out.as_bytes()).expect("unable to write");
+    }
