@@ -39,7 +39,7 @@ theme: rainbow_horizontal
 use_rounded_edges: true
 ```
 # Notes in the terminal
-You can also have a visual representatio in the terminal if you want to check that out go to **midi_play** folder and run `cargo run --release` and pick the new `midir reading input:midir-read-input` option.
+You can also have a visual representation in the terminal if you want to check that out go to **midi_play** folder and run `cargo run --release` and pick the new `midir reading input:midir-read-input` option.
 After that there will start apperaing notes in the first terminal.
 ![image](https://user-images.githubusercontent.com/86601983/176659743-edd98498-944a-45b5-bc77-5ea751fa0625.png)
 Thats all have fun!
