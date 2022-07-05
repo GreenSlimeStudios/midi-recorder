@@ -46,7 +46,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
             )
             .w(note_multiplier - settings.note_margin)
             .h(note.length)
-            .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+            .hsv(get_color_h(&note, &settings.theme), get_color_s(&note, &settings.theme), 1.0);
         //.rotate(note.length);
         if settings.use_rounded_edges == true {
             draw.ellipse()
@@ -58,7 +58,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 )
                 .w(note_multiplier - settings.note_margin)
                 .h(note_multiplier / 2.0)
-                .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+                .hsv(get_color_h(&note, &settings.theme), get_color_s(&note, &settings.theme), 1.0);
             draw.ellipse()
                 .x_y(
                     (note.note as f32 * note_multiplier)
@@ -68,7 +68,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 )
                 .w(note_multiplier - settings.note_margin)
                 .h(note_multiplier / 2.0)
-                .hsv(note.note as f32 / 70.0, 1.0, 1.0);
+                .hsv(get_color_h(&note, &settings.theme), get_color_s(&note, &settings.theme), 1.0);
         }
     }
     if settings.use_particles == true {
@@ -82,11 +82,111 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 )
                 .w(5.0)
                 .h(5.0)
-                .hsv(particle.x as f32 / 70.0, 1.0, 1.0);
+                .hsv(get_color_h_p(&particle, &settings.theme), get_color_s_p(&particle, &settings.theme), 1.0);
         }
     }
     draw.to_frame(app, &frame).unwrap();
     model.egui.draw_to_frame(&frame).unwrap();
+}
+fn get_color_h(note: &Note, theme: &NoteThemes) -> f32{
+    if theme == &NoteThemes::RainbowHorizontal{
+        return note.note as f32 / 70.0;
+    }
+    if theme == &NoteThemes::RainbowVertical{
+        return note.y as f32 / 1400.0;
+    }
+    if theme == &NoteThemes::Classic{
+        let mut blacks = Vec::new();
+        for i in 0..10{
+            for j in 0..12{
+                if [1,3,6,8,10].contains(&j){
+                    blacks.push(i*12+j);
+                }
+            }
+        }
+        if blacks.contains(&(note.note as i32)){
+            return 0.0;
+        }
+        else{
+            return 0.5;
+        }
+    }
+    return 1.0;
+}
+fn get_color_s(note: &Note, theme: &NoteThemes) -> f32{
+    if theme == &NoteThemes::RainbowHorizontal{
+        return 1.0;
+    }
+    if theme == &NoteThemes::RainbowVertical{
+        return 1.0;
+    }
+    if theme == &NoteThemes::Classic{
+        let mut blacks = Vec::new();
+        for i in 0..10{
+            for j in 0..12{
+                if [1,3,6,8,10].contains(&j){
+                    blacks.push(i*12+j);
+                }
+            }
+        }
+        if blacks.contains(&(note.note as i32)){
+            return 1.0;
+        }
+        else{
+            return 0.0;
+        }
+    }
+    return 1.0;
+}
+fn get_color_h_p(particle: &Particle, theme: &NoteThemes) -> f32{
+    if theme == &NoteThemes::RainbowHorizontal{
+        return particle.x as f32 / 70.0;
+    }
+    if theme == &NoteThemes::RainbowVertical{
+        return particle.y as f32 / 1400.0;
+    }
+    if theme == &NoteThemes::Classic{
+        let mut blacks = Vec::new();
+        for i in 0..10{
+            for j in 0..12{
+                if [1,3,6,8,10].contains(&j){
+                    blacks.push(i*12+j);
+                }
+            }
+        }
+        if blacks.contains(&(particle.x as i32)){
+            return 0.0;
+        }
+        else{
+            return 0.5;
+        }
+    }
+    return 1.0;
+}
+fn get_color_s_p(particle: &Particle, theme: &NoteThemes) -> f32{
+    if theme == &NoteThemes::RainbowHorizontal{
+        return 1.0;
+    }
+    if theme == &NoteThemes::RainbowVertical{
+        return 1.0;
+    }
+    if theme == &NoteThemes::Classic{
+        let mut blacks = Vec::new();
+        for i in 0..10{
+            for j in 0..12{
+                if [1,3,6,8,10].contains(&j){
+                    blacks.push(i*12+j);
+                }
+            }
+        }
+        if blacks.contains(&(particle.x as i32)){
+            return 1.0;
+        }
+        else{
+            return 0.0;
+        }
+    }
+    return 1.0;
 }
 struct Note {
     note: i8,
