@@ -120,7 +120,7 @@ fn get_color_h(note: &Note, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
     }
     if theme == &NoteThemes::Halo {
         if blacks.contains(&(note.note as i32)) {
-            return 0.5;
+            return 0.6;
         } else {
             return 0.5;
         }
@@ -158,14 +158,18 @@ fn get_color_h_p(particle: &Particle, theme: &NoteThemes, blacks: &Vec<i32>) -> 
         return particle.y as f32 / 1400.0;
     }
     if theme == &NoteThemes::Classic {
-        if blacks.contains(&(particle.x as i32)) {
-            return 0.0;
+        if blacks.contains(&(particle.note as i32)) {
+            return 1.0;
         } else {
-            return 0.5;
+            return 1.0;
         }
     }
     if theme == &NoteThemes::Halo {
-        return 0.5;
+        if blacks.contains(&(particle.note as i32)) {
+            return 0.6;
+        } else {
+            return 0.6;
+        }
     }
     return 1.0;
 }
@@ -177,14 +181,18 @@ fn get_color_s_p(particle: &Particle, theme: &NoteThemes, blacks: &Vec<i32>) -> 
         return 1.0;
     }
     if theme == &NoteThemes::Classic {
-        if blacks.contains(&(particle.x as i32)) {
+        if blacks.contains(&(particle.note as i32)) {
             return 1.0;
         } else {
             return 0.0;
         }
     }
     if theme == &NoteThemes::Halo {
-        return 0.5;
+        if blacks.contains(&(particle.note as i32)) {
+            return 1.0;
+        } else {
+            return 0.0;
+        }
     }
     return 1.0;
 }
@@ -246,6 +254,7 @@ enum NoteThemes {
     Halo,
 }
 struct Particle {
+    note: i8,
     x: f32,
     y: f32,
     lifetime: f32,
@@ -255,6 +264,7 @@ impl Particle {
     fn new(note: &Note, x_vel: f32, iterator: i32, note_speed: f32) -> Self {
         Particle {
             velocity: Vec2::new(x_vel, 0.0),
+            note: note.note,
             x: note.note as f32,
             y: note.y - (note_speed * iterator as f32),
             lifetime: 0.0,
@@ -296,7 +306,7 @@ impl Model {
 }
 fn read_settings_from_file(path: &str, settings: &mut Settings) {
     let contents = fs::read_to_string(path).expect("Something went wrong reading the config file");
-    let mut config_items: Vec<&str> = contents.split("\n").collect();
+    let config_items: Vec<&str> = contents.split("\n").collect();
     for item in config_items {
         let values: Vec<&str> = item.split(" ").collect();
         println!("{:?}", values);
@@ -393,19 +403,19 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         // ui.label("Theme");
         ui.checkbox(&mut &mut settings.show_theme_options, "Show Themes");
         if settings.show_theme_options {
-            let mut button = ui.button("Rainbow horizontal").clicked();
+            let button = ui.button("Rainbow horizontal").clicked();
             if button {
                 settings.theme = NoteThemes::RainbowHorizontal;
             }
-            let mut button = ui.button("Rainbow vertical").clicked();
+            let button = ui.button("Rainbow vertical").clicked();
             if button {
                 settings.theme = NoteThemes::RainbowVertical;
             }
-            let mut button = ui.button("Classic").clicked();
+            let button = ui.button("Classic").clicked();
             if button {
                 settings.theme = NoteThemes::Classic;
             }
-            let mut button = ui.button("Halo").clicked();
+            let button = ui.button("Halo").clicked();
             if button {
                 settings.theme = NoteThemes::Halo;
             }
@@ -476,7 +486,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 
         if is_note_existant {
             let mut index: usize = 0;
-            let mut most_len: f32 = 0.0;
+            let most_len: f32 = 0.0;
             for i in 0..model.keys.len() {
                 if model.keys[i].note == n.parse::<i8>().unwrap() {
                     if model.keys[i].length > most_len {
