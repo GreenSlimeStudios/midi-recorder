@@ -217,6 +217,7 @@ struct Settings {
     theme: NoteThemes,
     use_rounded_edges: bool,
     show_save_files: bool,
+    show_theme_options: bool,
 }
 impl Settings {
     fn from_consts() -> Self {
@@ -231,6 +232,7 @@ impl Settings {
             theme: NOTE_THEME,
             use_rounded_edges: ROUNDED_NOTE_EDGES,
             show_save_files: false,
+            show_theme_options: false,
         }
     }
 }
@@ -373,6 +375,24 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             ui.add(egui::Slider::new(&mut settings.note_width, 0.0..=50.0));
         }
 
+        // ui.label("Theme");
+        ui.checkbox(&mut &mut settings.show_theme_options, "Show Themes");
+        if settings.show_theme_options{
+            let mut button = ui.button("Rainbow horizontal").clicked();
+            if button{
+                settings.theme = NoteThemes::RainbowHorizontal;
+            }
+            let mut button = ui.button("Rainbow vertical").clicked();
+            if button{
+                settings.theme = NoteThemes::RainbowVertical;
+            }
+            let mut button = ui.button("Classic").clicked();
+            if button{
+                settings.theme = NoteThemes::Classic;
+            }
+        }
+        ui.label("Save Load options");
+        
         let reset_settings = ui.button("Reset to default");
         if reset_settings.clicked() {
             read_settings_from_file("config1.txt", settings);
