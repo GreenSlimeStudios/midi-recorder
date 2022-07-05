@@ -46,7 +46,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
             )
             .w(note_multiplier - settings.note_margin)
             .h(note.length)
-            .hsv(get_color_h(&note, &settings.theme), get_color_s(&note, &settings.theme), 1.0);
+            .hsv(
+                get_color_h(&note, &settings.theme, &settings.black_keys),
+                get_color_s(&note, &settings.theme, &settings.black_keys),
+                1.0,
+            );
         //.rotate(note.length);
         if settings.use_rounded_edges == true {
             draw.ellipse()
@@ -58,7 +62,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 )
                 .w(note_multiplier - settings.note_margin)
                 .h(note_multiplier / 2.0)
-                .hsv(get_color_h(&note, &settings.theme), get_color_s(&note, &settings.theme), 1.0);
+                .hsv(
+                    get_color_h(&note, &settings.theme, &settings.black_keys),
+                    get_color_s(&note, &settings.theme, &settings.black_keys),
+                    1.0,
+                );
             draw.ellipse()
                 .x_y(
                     (note.note as f32 * note_multiplier)
@@ -68,7 +76,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 )
                 .w(note_multiplier - settings.note_margin)
                 .h(note_multiplier / 2.0)
-                .hsv(get_color_h(&note, &settings.theme), get_color_s(&note, &settings.theme), 1.0);
+                .hsv(
+                    get_color_h(&note, &settings.theme, &settings.black_keys),
+                    get_color_s(&note, &settings.theme, &settings.black_keys),
+                    1.0,
+                );
         }
     }
     if settings.use_particles == true {
@@ -82,109 +94,97 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 )
                 .w(5.0)
                 .h(5.0)
-                .hsv(get_color_h_p(&particle, &settings.theme), get_color_s_p(&particle, &settings.theme), 1.0);
+                .hsv(
+                    get_color_h_p(&particle, &settings.theme, &settings.black_keys),
+                    get_color_s_p(&particle, &settings.theme, &settings.black_keys),
+                    1.0,
+                );
         }
     }
     draw.to_frame(app, &frame).unwrap();
     model.egui.draw_to_frame(&frame).unwrap();
 }
-fn get_color_h(note: &Note, theme: &NoteThemes) -> f32{
-    if theme == &NoteThemes::RainbowHorizontal{
+fn get_color_h(note: &Note, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
+    if theme == &NoteThemes::RainbowHorizontal {
         return note.note as f32 / 70.0;
     }
-    if theme == &NoteThemes::RainbowVertical{
+    if theme == &NoteThemes::RainbowVertical {
         return note.y as f32 / 1400.0;
     }
-    if theme == &NoteThemes::Classic{
-        let mut blacks = Vec::new();
-        for i in 0..10{
-            for j in 0..12{
-                if [1,3,6,8,10].contains(&j){
-                    blacks.push(i*12+j);
-                }
-            }
-        }
-        if blacks.contains(&(note.note as i32)){
+    if theme == &NoteThemes::Classic {
+        if blacks.contains(&(note.note as i32)) {
             return 0.0;
+        } else {
+            return 0.5;
         }
-        else{
+    }
+    if theme == &NoteThemes::Halo {
+        if blacks.contains(&(note.note as i32)) {
+            return 0.5;
+        } else {
             return 0.5;
         }
     }
     return 1.0;
 }
-fn get_color_s(note: &Note, theme: &NoteThemes) -> f32{
-    if theme == &NoteThemes::RainbowHorizontal{
+fn get_color_s(note: &Note, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
+    if theme == &NoteThemes::RainbowHorizontal {
         return 1.0;
     }
-    if theme == &NoteThemes::RainbowVertical{
+    if theme == &NoteThemes::RainbowVertical {
         return 1.0;
     }
-    if theme == &NoteThemes::Classic{
-        let mut blacks = Vec::new();
-        for i in 0..10{
-            for j in 0..12{
-                if [1,3,6,8,10].contains(&j){
-                    blacks.push(i*12+j);
-                }
-            }
-        }
-        if blacks.contains(&(note.note as i32)){
+    if theme == &NoteThemes::Classic {
+        if blacks.contains(&(note.note as i32)) {
             return 1.0;
+        } else {
+            return 0.0;
         }
-        else{
+    }
+    if theme == &NoteThemes::Halo {
+        if blacks.contains(&(note.note as i32)) {
+            return 1.0;
+        } else {
             return 0.0;
         }
     }
     return 1.0;
 }
-fn get_color_h_p(particle: &Particle, theme: &NoteThemes) -> f32{
-    if theme == &NoteThemes::RainbowHorizontal{
+fn get_color_h_p(particle: &Particle, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
+    if theme == &NoteThemes::RainbowHorizontal {
         return particle.x as f32 / 70.0;
     }
-    if theme == &NoteThemes::RainbowVertical{
+    if theme == &NoteThemes::RainbowVertical {
         return particle.y as f32 / 1400.0;
     }
-    if theme == &NoteThemes::Classic{
-        let mut blacks = Vec::new();
-        for i in 0..10{
-            for j in 0..12{
-                if [1,3,6,8,10].contains(&j){
-                    blacks.push(i*12+j);
-                }
-            }
-        }
-        if blacks.contains(&(particle.x as i32)){
+    if theme == &NoteThemes::Classic {
+        if blacks.contains(&(particle.x as i32)) {
             return 0.0;
-        }
-        else{
+        } else {
             return 0.5;
         }
     }
+    if theme == &NoteThemes::Halo {
+        return 0.5;
+    }
     return 1.0;
 }
-fn get_color_s_p(particle: &Particle, theme: &NoteThemes) -> f32{
-    if theme == &NoteThemes::RainbowHorizontal{
+fn get_color_s_p(particle: &Particle, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
+    if theme == &NoteThemes::RainbowHorizontal {
         return 1.0;
     }
-    if theme == &NoteThemes::RainbowVertical{
+    if theme == &NoteThemes::RainbowVertical {
         return 1.0;
     }
-    if theme == &NoteThemes::Classic{
-        let mut blacks = Vec::new();
-        for i in 0..10{
-            for j in 0..12{
-                if [1,3,6,8,10].contains(&j){
-                    blacks.push(i*12+j);
-                }
-            }
-        }
-        if blacks.contains(&(particle.x as i32)){
+    if theme == &NoteThemes::Classic {
+        if blacks.contains(&(particle.x as i32)) {
             return 1.0;
-        }
-        else{
+        } else {
             return 0.0;
         }
+    }
+    if theme == &NoteThemes::Halo {
+        return 0.5;
     }
     return 1.0;
 }
@@ -218,10 +218,12 @@ struct Settings {
     use_rounded_edges: bool,
     show_save_files: bool,
     show_theme_options: bool,
+    black_keys: Vec<i32>,
 }
 impl Settings {
     fn from_consts() -> Self {
         Settings {
+            black_keys: Vec::new(),
             note_speed: NOTE_SPEED,
             starting_note: STARTING_NOTE,
             ending_note: ENDING_NOTE,
@@ -241,6 +243,7 @@ enum NoteThemes {
     RainbowHorizontal,
     Classic,
     RainbowVertical,
+    Halo,
 }
 struct Particle {
     x: f32,
@@ -309,6 +312,7 @@ fn read_settings_from_file(path: &str, settings: &mut Settings) {
                 "rainbow_horizontal" => settings.theme = NoteThemes::RainbowHorizontal,
                 "rainbow_vertical" => settings.theme = NoteThemes::RainbowVertical,
                 "classic" => settings.theme = NoteThemes::Classic,
+                "halo" => settings.theme = NoteThemes::Halo,
                 _ => settings.theme = NoteThemes::RainbowHorizontal,
             },
             "use_rounded_edges:" => settings.use_rounded_edges = values[1].parse().unwrap(),
@@ -329,6 +333,17 @@ fn model(app: &App) -> Model {
 
     let mut settings: Settings = Settings::from_consts();
     read_settings_from_file("config_user.txt", &mut settings);
+
+    let mut blacks = Vec::new();
+    for i in 0..10 {
+        for j in 0..12 {
+            if [1, 3, 6, 8, 10].contains(&j) {
+                blacks.push(i * 12 + j);
+            }
+        }
+    }
+
+    settings.black_keys = blacks;
 
     let window = app.window(window_id).unwrap();
     let egui = Egui::from_window(&window);
@@ -377,22 +392,26 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 
         // ui.label("Theme");
         ui.checkbox(&mut &mut settings.show_theme_options, "Show Themes");
-        if settings.show_theme_options{
+        if settings.show_theme_options {
             let mut button = ui.button("Rainbow horizontal").clicked();
-            if button{
+            if button {
                 settings.theme = NoteThemes::RainbowHorizontal;
             }
             let mut button = ui.button("Rainbow vertical").clicked();
-            if button{
+            if button {
                 settings.theme = NoteThemes::RainbowVertical;
             }
             let mut button = ui.button("Classic").clicked();
-            if button{
+            if button {
                 settings.theme = NoteThemes::Classic;
+            }
+            let mut button = ui.button("Halo").clicked();
+            if button {
+                settings.theme = NoteThemes::Halo;
             }
         }
         ui.label("Save Load options");
-        
+
         let reset_settings = ui.button("Reset to default");
         if reset_settings.clicked() {
             read_settings_from_file("config1.txt", settings);
@@ -560,6 +579,7 @@ fn save_settings_to_file(path: &str, settings: &Settings) {
         NoteThemes::RainbowHorizontal => value.push_str("rainbow_horizontal"),
         NoteThemes::RainbowVertical => value.push_str("rainbow_vertical"),
         NoteThemes::Classic => value.push_str("classic"),
+        NoteThemes::Halo => value.push_str("halo"),
         _ => value.push_str("rainbow_horizontal"),
     }
     out.push_str(&value);
