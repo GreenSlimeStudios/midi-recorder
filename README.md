@@ -18,6 +18,8 @@ rainbow_vertical
 
 classic (black notes on piano are red)
 ![nice_classic2](https://user-images.githubusercontent.com/86601983/177411143-a010c090-8629-471f-a174-7abc1b392d38.png)
+halo (black notes on piano are aqua)
+![Screenshot from 2022-07-06 12-02-39](https://user-images.githubusercontent.com/86601983/177528014-9ea62c16-b6b2-4396-9dfa-0908c743ea67.png)
 
 There are more!
 
