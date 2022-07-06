@@ -43,3 +43,17 @@ You can also have a visual representation in the terminal if you want to check t
 After that there will start apperaing notes in the first terminal.
 ![image](https://user-images.githubusercontent.com/86601983/176659743-edd98498-944a-45b5-bc77-5ea751fa0625.png)
 Thats all have fun!
+# Troubleshooting
+If the notes from your midi device do noty show up either in the graphical way nor the terminal way and you are sure that your device is connected and turned on than this might help.
+Go to the `midi` folder and run `cargo run d` (dont run other programs for now) this will turn on debug mode now if you press a note you should see something like this popping up:
+![Screenshot from 2022-07-06 10-52-23](https://user-images.githubusercontent.com/86601983/177518362-abf5a563-d1e2-4cba-845c-fa1122af10cd.png)
+Now you need to remember those first numbers of the rows that appear **WHEN YOU PRESS AND RELEASE A NOTE** it will show you 2 diffrent ones on press and on release.
+![Screenshot from 2022-07-06 10-52-23](https://user-images.githubusercontent.com/86601983/177519193-4b1a6f98-1563-4898-a3ca-2ac551d8b3c7.png)
+After that go to the `midi/whitelist.txt` file and put those numbers in there.
+example of `whitelist.txt`
+```
+128
+144
+```
+After that run the program normally with the normal steps located above this section.
+I hope that helps.
