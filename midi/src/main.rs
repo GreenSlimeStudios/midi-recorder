@@ -4,6 +4,7 @@ use std::error::Error;
 use std::io::{stdin, stdout, Write};
 
 use midir::{Ignore, MidiInput};
+use std::fs;
 use std::fs::File;
 
 fn main() {
@@ -29,6 +30,19 @@ fn run() -> Result<(), Box<dyn Error>> {
         println!("Debug Mode is on");
         is_debug = true;
     }
+
+    let contents =
+        fs::read_to_string("whitelist.txt").expect("Something went wrong reading the config file");
+    let mut whitelisted_inputs: Vec<&str> = contents.split("\n").collect();
+    whitelisted_inputs.pop();
+    // let whitelisted_inputs_u8: Vec<u8> = whitelisted_inputs.into().map(|x| x.parse.unwrap());
+
+    let whitelisted_inputs_u8: Vec<u8> = whitelisted_inputs
+        .into_iter()
+        .map(|x| x.parse().unwrap())
+        .collect();
+
+    println!("Whitelisted inputs\n{:?}", whitelisted_inputs_u8);
 
     let mut midi_in = MidiInput::new("midir reading input")?;
     midi_in.ignore(Ignore::None);
@@ -67,14 +81,14 @@ fn run() -> Result<(), Box<dyn Error>> {
     let _conn_in = midi_in.connect(
         in_port,
         "midir-read-input",
-        move |stamp, message, _| {
+        move |_stamp, message, _| {
             if message.len() == 3usize {
                 //println!("{:?}", message);
                 if message[1] != 1 {
                     if is_debug == true {
                         println!("{:?}", message);
                     }
-                    if message[0] == 144 || message[0] == 128 {
+                    if whitelisted_inputs_u8.contains(&message[0]) {
                         // this checks if the midi input is a note
                         handle_note(message[1].into(), &mut active_notes);
                         write_notes_to_file(&active_notes);
