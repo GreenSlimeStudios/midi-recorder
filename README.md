@@ -1,6 +1,8 @@
 # midi-recorder
 A program that prints out the notes in your terminal & graphicly like in a nice visual representation
 
+For video previews of the program in action go to [VIDEO_EXAMPLES](VIDEO_EXAMPLES.md)
+
 # Usage
 go to `midi` folder and run `cargo run --release` then pick your input midi device with a number.
 
