@@ -2,15 +2,16 @@ extern crate midir;
 
 use std::error::Error;
 use std::io::{stdin, stdout, Write};
+use std::thread::JoinHandle;
 
 use midir::{Ignore, MidiInput};
 use std::fs;
 use std::fs::File;
+use std::time;
 
 use nannou::prelude::*;
 use nannou_egui::{self, egui, Egui};
 use rand::{prelude::ThreadRng, Rng};
-
 
 const NOTE_SPEED: f32 = 5.0; // speed of floating notes
 const STARTING_NOTE: i32 = 21; // the note value of the first note on your midi device
@@ -27,53 +28,56 @@ fn main() {
     let mut ofile = File::create("info.txt").expect("unable to create file");
     ofile.write_all("".as_bytes()).expect("unable to write");
 
-    std::thread::spawn(|| {
-        match run() {
-            Ok(_) => (),
-            Err(err) => println!("Error: {}", err),
-        }
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let args2 = args.clone();
+    let t1 = std::thread::spawn(move || match run(&args2) {
+        Ok(_) => (),
+        Err(err) => println!("Error: {}", err),
     });
-    nannou::app(model).update(update).run();
-    //     loop {
+    let t2:JoinHandle<()>; 
+    if args.contains(&"terminal".to_string()) {
+        t2 = std::thread::spawn(|| {
+            loop {
+                let contents =
+                    fs::read_to_string("info.txt").expect("Something went wrong reading the file");
+                let mut notes_string: Vec<&str> = contents.split("\n").collect();
+                notes_string.pop();
+                // println!("{:?}",contents);
 
-    //         let contents =
-    //             fs::read_to_string("info.txt").expect("Something went wrong reading the file");
-    //         let mut notes_string: Vec<&str> = contents.split("\n").collect();
-    //         notes_string.pop();
-    //         // println!("{:?}",contents);
+                let notes: Vec<i32>;
 
-    //         let notes: Vec<i32>;
+                if !notes_string.is_empty() {
+                    notes = notes_string
+                        .iter()
+                        .map(|x| x.parse::<i32>().unwrap())
+                        .collect();
+                } else {
+                    notes = Vec::new();
+                }
 
-    //         if !notes_string.is_empty(){
-    //             notes = notes_string
-    //             .iter()
-    //             .map(|x| x.parse::<i32>().unwrap())
-    //             .collect();
-    //         }
-    //         else {
-    //             notes = Vec::new();
-    //         }
-    // 
-    //         // println!("{:?}",notes);
-    //         display_board(&notes);
-    //     }
-
-    // let mut active_notes:Vec<i32> = Vec::new();
-    {
-        match run() {
-            Ok(_) => (),
-            Err(err) => println!("Error: {}", err),
-        }
+                // println!("{:?}",notes);
+                display_board(&notes);
+                std::thread::sleep(time::Duration::from_millis(100));
+            }
+        });
     }
+    else {
+        t2 = std::thread::spawn(||{});
+    }
+
+    if !args.contains(&"no-visual".to_string()) {
+        nannou::app(model).update(update).run();
+    }
+    t1.join().unwrap();
+    t2.join().unwrap();
 }
 
-fn run() -> Result<(), Box<dyn Error>> {
+fn run(args: &Vec<String>) -> Result<(), Box<dyn Error>> {
     let mut input = String::new();
 
-    let args: Vec<String> = std::env::args().skip(1).collect();
     let mut is_debug: bool = false;
 
-    if args.contains(&"d".to_string()) {
+    if args.contains(&"debug".to_string()) {
         println!("Debug Mode is on");
         is_debug = true;
     }
@@ -199,7 +203,6 @@ fn write_notes_to_file(act_notes: &Vec<i32>) {
     ofile.write_all(out.as_bytes()).expect("unable to write");
 }
 
-
 fn view(app: &App, model: &Model, frame: Frame) {
     // println!("view start");
     let draw = app.draw();
@@ -294,96 +297,108 @@ fn view(app: &App, model: &Model, frame: Frame) {
     // println!("gut9");
 }
 fn get_color_h(note: &Note, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
-    if theme == &NoteThemes::RainbowHorizontal {
-        return note.note as f32 / 70.0;
-    }
-    if theme == &NoteThemes::RainbowVertical {
-        return note.y as f32 / 1400.0;
-    }
-    if theme == &NoteThemes::Classic {
-        if blacks.contains(&(note.note as i32)) {
-            return 0.0;
-        } else {
-            return 0.5;
+    match theme {
+        &NoteThemes::RainbowHorizontal => {
+            return note.note as f32 / 70.0;
         }
-    }
-    if theme == &NoteThemes::Halo {
-        if blacks.contains(&(note.note as i32)) {
-            return 0.6;
-        } else {
-            return 0.5;
+        &NoteThemes::RainbowVertical => {
+            return note.y as f32 / 1400.0;
         }
+        &NoteThemes::Classic => {
+            if blacks.contains(&(note.note as i32)) {
+                return 0.0;
+            } else {
+                return 0.5;
+            }
+        }
+        &NoteThemes::Halo => {
+            if blacks.contains(&(note.note as i32)) {
+                return 0.6;
+            } else {
+                return 0.5;
+            }
+        } // _ => {
+          //     return 1.0;
+          // }
     }
-    return 1.0;
 }
 fn get_color_s(note: &Note, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
-    if theme == &NoteThemes::RainbowHorizontal {
-        return 1.0;
-    }
-    if theme == &NoteThemes::RainbowVertical {
-        return 1.0;
-    }
-    if theme == &NoteThemes::Classic {
-        if blacks.contains(&(note.note as i32)) {
+    match theme {
+        &NoteThemes::RainbowHorizontal => {
             return 1.0;
-        } else {
-            return 0.0;
         }
-    }
-    if theme == &NoteThemes::Halo {
-        if blacks.contains(&(note.note as i32)) {
+        &NoteThemes::RainbowVertical => {
             return 1.0;
-        } else {
-            return 0.0;
         }
+        &NoteThemes::Classic => {
+            if blacks.contains(&(note.note as i32)) {
+                return 1.0;
+            } else {
+                return 0.0;
+            }
+        }
+        &NoteThemes::Halo => {
+            if blacks.contains(&(note.note as i32)) {
+                return 1.0;
+            } else {
+                return 0.0;
+            }
+        } // _ => {
+          //     return 1.0;
+          // }
     }
-    return 1.0;
 }
 fn get_color_h_p(particle: &Particle, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
-    if theme == &NoteThemes::RainbowHorizontal {
-        return particle.x as f32 / 70.0;
-    }
-    if theme == &NoteThemes::RainbowVertical {
-        return particle.y as f32 / 1400.0;
-    }
-    if theme == &NoteThemes::Classic {
-        if blacks.contains(&(particle.note as i32)) {
-            return 1.0;
-        } else {
-            return 1.0;
+    match theme {
+        &NoteThemes::RainbowHorizontal => {
+            return particle.x as f32 / 70.0;
         }
-    }
-    if theme == &NoteThemes::Halo {
-        if blacks.contains(&(particle.note as i32)) {
-            return 0.6;
-        } else {
-            return 0.6;
+        &NoteThemes::RainbowVertical => {
+            return particle.y as f32 / 1400.0;
         }
+        &NoteThemes::Classic => {
+            if blacks.contains(&(particle.note as i32)) {
+                return 1.0;
+            } else {
+                return 1.0;
+            }
+        }
+        &NoteThemes::Halo => {
+            if blacks.contains(&(particle.note as i32)) {
+                return 0.6;
+            } else {
+                return 0.6;
+            }
+        } // _ => {
+          //     return 1.0;
+          // }
     }
-    return 1.0;
 }
 fn get_color_s_p(particle: &Particle, theme: &NoteThemes, blacks: &Vec<i32>) -> f32 {
-    if theme == &NoteThemes::RainbowHorizontal {
-        return 1.0;
-    }
-    if theme == &NoteThemes::RainbowVertical {
-        return 1.0;
-    }
-    if theme == &NoteThemes::Classic {
-        if blacks.contains(&(particle.note as i32)) {
+    match theme {
+        &NoteThemes::RainbowHorizontal => {
             return 1.0;
-        } else {
-            return 0.0;
         }
-    }
-    if theme == &NoteThemes::Halo {
-        if blacks.contains(&(particle.note as i32)) {
+        &NoteThemes::RainbowVertical => {
             return 1.0;
-        } else {
-            return 0.0;
         }
+        &NoteThemes::Classic => {
+            if blacks.contains(&(particle.note as i32)) {
+                return 1.0;
+            } else {
+                return 0.0;
+            }
+        }
+        &NoteThemes::Halo => {
+            if blacks.contains(&(particle.note as i32)) {
+                return 1.0;
+            } else {
+                return 0.0;
+            }
+        } // _ => {
+          //     return 1.0;
+          // }
     }
-    return 1.0;
 }
 struct Note {
     note: i8,
@@ -519,7 +534,7 @@ fn read_settings_from_file(path: &str, settings: &mut Settings) {
             _ => (),
         }
     }
-    println!("Succesfully loaded settings from {}",path);
+    println!("Succesfully loaded settings from {}", path);
 }
 
 fn model(app: &App) -> Model {
@@ -663,8 +678,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         // println!("e3");
     });
     // println!("post egui");
-    let contents =
-        fs::read_to_string("info.txt").expect("Something went wrong reading the file");
+    let contents = fs::read_to_string("info.txt").expect("Something went wrong reading the file");
 
     // println!("got contents from file");
     let mut notes_string: Vec<&str> = contents.split("\n").collect();
@@ -798,7 +812,7 @@ fn save_settings_to_file(path: &str, settings: &Settings) {
     let mut ofile = File::create(path).expect("unable to create file");
     ofile.write_all(out.as_bytes()).expect("unable to write");
 }
-fn push_to_out(out:&mut String,val:&String){
+fn push_to_out(out: &mut String, val: &String) {
     out.push_str(&val);
     out.push_str("\n");
 }
