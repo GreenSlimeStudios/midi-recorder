@@ -495,7 +495,8 @@ impl Model {
 }
 fn read_settings_from_file(path: &str, settings: &mut Settings) {
     let contents = fs::read_to_string(path).expect("Something went wrong reading the config file");
-    let config_items: Vec<&str> = contents.split("\n").collect();
+    let mut config_items: Vec<&str> = contents.split("\n").collect();
+    config_items.pop();
     for item in config_items {
         let values: Vec<&str> = item.split(" ").collect();
         println!("setting {:?}", values);
@@ -518,6 +519,7 @@ fn read_settings_from_file(path: &str, settings: &mut Settings) {
             _ => (),
         }
     }
+    println!("Succesfully loaded settings from {}",path);
 }
 
 fn model(app: &App) -> Model {
@@ -751,38 +753,31 @@ fn save_settings_to_file(path: &str, settings: &Settings) {
 
     let mut value: String = "note_speed: ".to_string();
     value.push_str(settings.note_speed.to_string().as_str());
-    out.push_str(&value);
-    out.push_str("\n");
+    push_to_out(&mut out, &value);
 
-    let mut value: String = "starting_note: ".to_string();
+    value = "starting_note: ".to_string();
     value.push_str(settings.starting_note.to_string().as_str());
-    out.push_str(&value);
-    out.push_str("\n");
+    push_to_out(&mut out, &value);
 
-    let mut value: String = "ending_note: ".to_string();
+    value = "ending_note: ".to_string();
     value.push_str(settings.ending_note.to_string().as_str());
-    out.push_str(&value);
-    out.push_str("\n");
+    push_to_out(&mut out, &value);
 
-    let mut value: String = "note_margin: ".to_string();
+    value = "note_margin: ".to_string();
     value.push_str(settings.note_margin.to_string().as_str());
-    out.push_str(&value);
-    out.push_str("\n");
+    push_to_out(&mut out, &value);
 
-    let mut value: String = "use_width_adjust: ".to_string();
+    value = "use_width_adjust: ".to_string();
     value.push_str(settings.use_width_adjust.to_string().as_str());
-    out.push_str(&value);
-    out.push_str("\n");
+    push_to_out(&mut out, &value);
 
-    let mut value: String = "note_width: ".to_string();
+    value = "note_width: ".to_string();
     value.push_str(settings.note_width.to_string().as_str());
-    out.push_str(&value);
-    out.push_str("\n");
+    push_to_out(&mut out, &value);
 
-    let mut value: String = "use_particles: ".to_string();
+    value = "use_particles: ".to_string();
     value.push_str(settings.use_particles.to_string().as_str());
-    out.push_str(&value);
-    out.push_str("\n");
+    push_to_out(&mut out, &value);
 
     let mut value: String = "theme: ".to_string();
     match settings.theme {
@@ -802,4 +797,8 @@ fn save_settings_to_file(path: &str, settings: &Settings) {
 
     let mut ofile = File::create(path).expect("unable to create file");
     ofile.write_all(out.as_bytes()).expect("unable to write");
+}
+fn push_to_out(out:&mut String,val:&String){
+    out.push_str(&val);
+    out.push_str("\n");
 }
