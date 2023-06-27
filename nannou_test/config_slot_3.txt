@@ -1,9 +1,0 @@
-note_speed: 3.5
-starting_note: 5
-ending_note: 108
-note_margin: 2
-use_width_adjust: true
-note_width: 10
-use_particles: false
-theme: classic
-use_rounded_edges: true
