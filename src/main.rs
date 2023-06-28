@@ -1,4 +1,5 @@
 extern crate midir;
+use std::sync::{Arc,Mutex};
 
 use std::error::Error;
 use std::io::{stdin, stdout, Write};
@@ -115,9 +116,26 @@ fn run(args: &Vec<String>) -> Result<(), Box<dyn Error>> {
                 println!("{}: {}", i, midi_in.port_name(p).unwrap());
             }
             print!("Please select input port:\n");
+            let input_given:Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+            let input_giv = Arc::clone(&input_given);
+            std::thread::spawn(move||{
+                loop {
+                    let given = input_giv.lock().unwrap();
+                    if *given {return;}
+                    drop(given);
+                    println!("Please select input port: ");
+                    std::thread::sleep(time::Duration::from_secs(3));
+                }
+            });
+            
+
             stdout().flush()?;
             let mut input = String::new();
             stdin().read_line(&mut input)?;
+
+            let mut given = input_given.lock().unwrap();
+            *given = true;
+
             in_ports
                 .get(input.trim().parse::<usize>()?)
                 .ok_or("invalid input port selected")?
