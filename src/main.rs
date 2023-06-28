@@ -36,7 +36,7 @@ fn main() {
         Err(err) => println!("Error: {}", err),
     });
     let t2:JoinHandle<()>; 
-    if args.contains(&"terminal".to_string()) {
+    if args.contains(&"terminal".to_string()) || args.contains(&"t".to_string()) {
         t2 = std::thread::spawn(|| {
             loop {
                 let contents =
@@ -66,7 +66,7 @@ fn main() {
         t2 = std::thread::spawn(||{});
     }
 
-    if !args.contains(&"no-visual".to_string()) {
+    if !args.contains(&"no-graphical".to_string()) && !args.contains(&"n".to_string()) {
         nannou::app(model).update(update).run();
     }
     t1.join().unwrap();
@@ -78,7 +78,7 @@ fn run(args: &Vec<String>) -> Result<(), Box<dyn Error>> {
 
     let mut is_debug: bool = false;
 
-    if args.contains(&"debug".to_string()) {
+    if args.contains(&"debug".to_string()) || args.contains(&"d".to_string()) {
         println!("Debug Mode is on");
         is_debug = true;
     }
